@@ -1,9 +1,13 @@
 "use client";
 
-import { Check } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import type { Criterion } from "../data/criteria";
+
+type Criterion = {
+  id: string;
+  name: string;
+  description?: string;
+};
 
 type CriteriaSelectorProps = {
   categoryId: string;
@@ -15,86 +19,88 @@ export default function CriteriaSelector({
   criteria,
 }: CriteriaSelectorProps) {
   const router = useRouter();
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [selectedCriteria, setSelectedCriteria] = useState<string[]>([]);
 
-  function toggleCriterion(criterionId: string) {
-    setSelectedIds((currentIds) =>
-      currentIds.includes(criterionId)
-        ? currentIds.filter((id) => id !== criterionId)
-        : [...currentIds, criterionId],
+  const toggleCriterion = (criterionId: string) => {
+    setSelectedCriteria((current) =>
+      current.includes(criterionId)
+        ? current.filter((id) => id !== criterionId)
+        : [...current, criterionId],
     );
-  }
+  };
 
-  function handleSearch() {
-    if (selectedIds.length === 0) {
+  const handleSearch = () => {
+    if (selectedCriteria.length === 0) {
       return;
     }
 
-    const searchParams = new URLSearchParams({
-      criteria: selectedIds.join(","),
-    });
+    const query = selectedCriteria
+      .map((criterionId) => `criteria=${encodeURIComponent(criterionId)}`)
+      .join("&");
 
-    router.push(`/explore/${categoryId}/results?${searchParams.toString()}`);
-  }
+    router.push(`/explore/${categoryId}/results?${query}`);
+  };
 
   return (
-    <>
+    <div>
       <div className="space-y-3">
         {criteria.map((criterion) => {
-          const isSelected = selectedIds.includes(criterion.id);
+          const isSelected = selectedCriteria.includes(criterion.id);
 
           return (
             <button
               key={criterion.id}
               type="button"
               onClick={() => toggleCriterion(criterion.id)}
-              aria-pressed={isSelected}
-              className={`flex w-full items-start gap-4 rounded-card border p-4 text-left shadow-soft transition ${
+              className={`w-full rounded-card border p-5 text-left transition ${
                 isSelected
-                  ? "border-brand-600 bg-brand-50"
+                  ? "border-brand-500 bg-brand-50"
                   : "border-border bg-card hover:border-brand-300"
               }`}
             >
-              <span
-                className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md border ${
-                  isSelected
-                    ? "border-brand-600 bg-brand-600 text-white"
-                    : "border-border bg-white"
-                }`}
-              >
-                {isSelected && (
-                  <Check aria-hidden="true" size={16} strokeWidth={3} />
-                )}
-              </span>
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="font-bold text-ink">
+                    {criterion.name}
+                  </p>
 
-              <span className="min-w-0">
-                <span className="block font-bold text-ink">
-                  {criterion.name}
-                </span>
+                  {criterion.description && (
+                    <p className="mt-2 text-sm leading-6 text-muted">
+                      {criterion.description}
+                    </p>
+                  )}
+                </div>
 
-                <span className="mt-1 block text-sm leading-6 text-muted">
-                  {criterion.description}
+                <span
+                  className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-sm font-bold ${
+                    isSelected
+                      ? "border-brand-600 bg-brand-600 text-white"
+                      : "border-border text-transparent"
+                  }`}
+                  aria-hidden="true"
+                >
+                  ✓
                 </span>
-              </span>
+              </div>
             </button>
           );
         })}
       </div>
 
-      <div className="mt-8 rounded-2xl bg-brand-50 px-4 py-3 text-center text-sm text-brand-700">
-        {selectedIds.length === 0
-          ? "重視する基準を選択してください"
-          : `${selectedIds.length}件の基準を選択中`}
-      </div>
+      <div className="mt-8">
+        <button
+          type="button"
+          onClick={handleSearch}
+          disabled={selectedCriteria.length === 0}
+          className="w-full rounded-2xl bg-brand-600 px-5 py-4 font-bold text-white transition hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-gray-300"
+        >
+          この基準で探す
+        </button>
 
-      <button
-        type="button"
-        onClick={handleSearch}
-        disabled={selectedIds.length === 0}
-        className="mt-4 flex w-full items-center justify-center rounded-button bg-brand-600 px-4 py-4 font-bold text-white shadow-soft transition enabled:hover:bg-brand-700 disabled:cursor-not-allowed disabled:bg-brand-200"
-      >
-        この基準で探す
-      </button>
-    </>
+        <p className="mt-3 text-center text-sm text-muted">
+          {selectedCriteria.length}件の基準を選択中
+        </p>
+      </div>
+    </div>
   );
 }
