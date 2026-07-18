@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { categories } from "../../data/categories";
+import BottomNavigation from "../../components/BottomNavigation";
 
 export default function ExplorePage() {
   return (
@@ -85,27 +86,7 @@ export default function ExplorePage() {
           </Link>
         </section>
 
-        <nav className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[480px] -translate-x-1/2 border-t border-[#dfe6e1] bg-white/95 px-8 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
-          <Link
-            href="/explore"
-            className="flex flex-1 flex-col items-center gap-1 rounded-xl py-1 text-[#315c4c]"
-          >
-            <span className="text-xl" aria-hidden="true">
-              🔍
-            </span>
-            <span className="text-xs font-bold">探す</span>
-          </Link>
-
-          <Link
-            href="/grow"
-            className="flex flex-1 flex-col items-center gap-1 rounded-xl py-1 text-[#718078]"
-          >
-            <span className="text-xl" aria-hidden="true">
-              🌱
-            </span>
-            <span className="text-xs font-bold">育てる</span>
-          </Link>
-        </nav>
+        <BottomNavigation />
       </div>
     </main>
   );
