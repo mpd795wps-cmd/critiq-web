@@ -1,0 +1,84 @@
+@import 'tailwindcss';
+
+@theme {
+  /* Brand colors */
+  --color-brand-50: #f1f6f3;
+  --color-brand-100: #e1ece6;
+  --color-brand-200: #c6d9ce;
+  --color-brand-300: #9fbdad;
+  --color-brand-400: #719c86;
+  --color-brand-500: #4d7c67;
+  --color-brand-600: #315c4c;
+  --color-brand-700: #284b3f;
+  --color-brand-800: #213d34;
+  --color-brand-900: #1c332c;
+
+  /* Background / text */
+  --color-canvas: #edf1ed;
+  --color-surface: #f8faf8;
+  --color-card: #ffffff;
+  --color-ink: #1f2a25;
+  --color-muted: #68746e;
+  --color-border: #dce5df;
+
+  /* Radii */
+  --radius-card: 1.5rem;
+  --radius-button: 1rem;
+  --radius-input: 1rem;
+
+  /* Shadows */
+  --shadow-soft:
+    0 1px 2px rgb(31 42 37 / 0.04),
+    0 8px 24px rgb(31 42 37 / 0.06);
+  --shadow-lifted:
+    0 2px 4px rgb(31 42 37 / 0.05),
+    0 12px 32px rgb(31 42 37 / 0.1);
+}
+
+:root {
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--color-canvas);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family:
+    Arial,
+    'Hiragino Kaku Gothic ProN',
+    'Hiragino Sans',
+    'Yu Gothic',
+    Meiryo,
+    sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: var(--color-brand-200);
+  color: var(--color-brand-900);
+}

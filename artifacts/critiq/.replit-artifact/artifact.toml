@@ -1,0 +1,27 @@
+kind = "web"
+previewPath = "/"
+title = "CRITIQ"
+version = "1.0.0"
+id = "artifacts/critiq"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20061
+
+[services.development]
+run = "pnpm --filter @workspace/critiq run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/critiq", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/critiq/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20061"
+BASE_PATH = "/"

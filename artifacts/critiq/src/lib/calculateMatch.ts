@@ -1,0 +1,62 @@
+import { getCriterionLabel } from '@/data/criteria';
+import type { MatchCriterion, MatchResult, Product } from '@/types/product';
+
+function roundToOneDecimal(value: number): number {
+  return Math.round(value * 10) / 10;
+}
+
+function createCriterion(
+  product: Product,
+  criterionId: string,
+): MatchCriterion | null {
+  const rating = product.ratings[criterionId];
+  if (!rating) return null;
+  return {
+    id: criterionId,
+    name: getCriterionLabel(criterionId),
+    score: rating.score,
+    count: rating.count,
+  };
+}
+
+export function calculateMatch(
+  product: Product,
+  selectedCriteria: string[],
+): MatchResult {
+  const validSelectedCriteria = Array.from(new Set(selectedCriteria)).filter(
+    (criterionId) => product.ratings[criterionId],
+  );
+
+  const matchedCriteria = validSelectedCriteria
+    .map((criterionId) => createCriterion(product, criterionId))
+    .filter((c): c is MatchCriterion => c !== null);
+
+  const selectedSet = new Set(validSelectedCriteria);
+
+  const otherCriteria = Object.keys(product.ratings)
+    .filter((criterionId) => !selectedSet.has(criterionId))
+    .map((criterionId) => createCriterion(product, criterionId))
+    .filter((c): c is MatchCriterion => c !== null)
+    .sort((a, b) => b.score - a.score);
+
+  const averageScore =
+    matchedCriteria.length > 0
+      ? matchedCriteria.reduce((total, c) => total + c.score, 0) /
+        matchedCriteria.length
+      : 0;
+
+  const allRatings = Object.values(product.ratings);
+  const overallAverageScore =
+    allRatings.length > 0
+      ? allRatings.reduce((total, r) => total + r.score, 0) / allRatings.length
+      : 0;
+
+  return {
+    percentage: Math.round((averageScore / 5) * 100),
+    averageScore: roundToOneDecimal(averageScore),
+    overallAverageScore: roundToOneDecimal(overallAverageScore),
+    reviewCount: product.reviewCount,
+    matchedCriteria,
+    otherCriteria,
+  };
+}
