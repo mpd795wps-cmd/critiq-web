@@ -1,6 +1,6 @@
 export const categories = [
-  { id: "tent", name: "テント", icon: "🛖" },
-  { id: "tarp", name: "タープ", icon: "⛺" },
+  { id: "tent", name: "テント", icon: "⛺" },
+  { id: "tarp", name: "タープ", icon: "タープ" },
   { id: "chair", name: "チェア", icon: "🪑" },
   { id: "cot", name: "コット", icon: "🛏" },
   { id: "sleeping-bag", name: "シュラフ", icon: "🛌" },
