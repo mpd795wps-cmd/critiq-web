@@ -5,7 +5,6 @@ import { useParams, useSearchParams } from "next/navigation";
 
 import BottomNavigation from "@/components/BottomNavigation";
 import ProductCard from "@/components/ProductCard";
-import { getCriterionLabel } from "@/data/criteria";
 import { products } from "@/data/products";
 import { calculateMatch } from "@/lib/calculateMatch";
 
@@ -15,28 +14,19 @@ export default function ResultsPage() {
 
   const categoryId = params.categoryId;
 
-  const selectedCriteria = Array.from(
-    new Set(
-      searchParams
-        .getAll("criteria")
-        .flatMap((value) => value.split(","))
-        .map((value) => value.trim())
-        .filter(Boolean),
-    ),
-  );
+  const selectedCriteria = searchParams
+    .getAll("criteria")
+    .flatMap((value) => value.split(","))
+    .map((value) => value.trim())
+    .filter(Boolean);
 
   const matchedProducts = products
     .filter((product) => product.categoryId === categoryId)
     .map((product) => ({
       product,
-      match: calculateMatch(product, selectedCriteria),
+      matchRate: calculateMatch(product, selectedCriteria),
     }))
-    .sort(
-      (a, b) =>
-        b.match.percentage - a.match.percentage ||
-        b.match.overallAverageScore -
-          a.match.overallAverageScore,
-    );
+    .sort((a, b) => b.matchRate - a.matchRate);
 
   return (
     <main className="min-h-screen bg-slate-50 pb-28">
@@ -49,9 +39,7 @@ export default function ResultsPage() {
         </Link>
 
         <header className="mt-6">
-          <p className="text-sm font-semibold text-emerald-700">
-            CRITIQ
-          </p>
+          <p className="text-sm font-semibold text-emerald-700">CRITIQ</p>
 
           <h1 className="mt-2 text-3xl font-bold text-slate-950">
             検索結果
@@ -63,23 +51,21 @@ export default function ResultsPage() {
         </header>
 
         <section className="mt-6">
-          <p className="text-sm font-bold text-slate-900">
-            選択した基準
-          </p>
+          <p className="text-sm font-bold text-slate-900">選択した基準</p>
 
           <div className="mt-3 flex flex-wrap gap-2">
             {selectedCriteria.length > 0 ? (
-              selectedCriteria.map((criterionId) => (
+              selectedCriteria.map((criterion) => (
                 <span
-                  key={criterionId}
+                  key={criterion}
                   className="rounded-full bg-slate-900 px-3 py-2 text-xs font-semibold text-white"
                 >
-                  {getCriterionLabel(criterionId)}
+                  {criterion}
                 </span>
               ))
             ) : (
               <span className="text-sm text-slate-500">
-                基準が選択されていません。
+                基準が選択されていません
               </span>
             )}
           </div>
@@ -87,9 +73,7 @@ export default function ResultsPage() {
 
         <section className="mt-8 space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-900">
-              商品一覧
-            </h2>
+            <h2 className="text-base font-bold text-slate-900">商品一覧</h2>
 
             <p className="text-sm text-slate-500">
               {matchedProducts.length}件
@@ -97,11 +81,11 @@ export default function ResultsPage() {
           </div>
 
           {matchedProducts.length > 0 ? (
-            matchedProducts.map(({ product, match }) => (
+            matchedProducts.map(({ product, matchRate }) => (
               <ProductCard
                 key={product.id}
                 product={product}
-                match={match}
+                matchRate={matchRate}
               />
             ))
           ) : (

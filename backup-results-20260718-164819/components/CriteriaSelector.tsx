@@ -19,9 +19,7 @@ export default function CriteriaSelector({
   criteria,
 }: CriteriaSelectorProps) {
   const router = useRouter();
-
-  const [selectedCriteria, setSelectedCriteria] =
-    useState<string[]>([]);
+  const [selectedCriteria, setSelectedCriteria] = useState<string[]>([]);
 
   const toggleCriterion = (criterionId: string) => {
     setSelectedCriteria((current) =>
@@ -37,31 +35,23 @@ export default function CriteriaSelector({
     }
 
     const query = selectedCriteria
-      .map(
-        (criterionId) =>
-          `criteria=${encodeURIComponent(criterionId)}`,
-      )
+      .map((criterionId) => `criteria=${encodeURIComponent(criterionId)}`)
       .join("&");
 
-    router.push(
-      `/explore/${encodeURIComponent(categoryId)}/results?${query}`,
-    );
+    router.push(`/explore/${categoryId}/results?${query}`);
   };
 
   return (
     <div>
       <div className="space-y-3">
         {criteria.map((criterion) => {
-          const isSelected = selectedCriteria.includes(
-            criterion.id,
-          );
+          const isSelected = selectedCriteria.includes(criterion.id);
 
           return (
             <button
               key={criterion.id}
               type="button"
               onClick={() => toggleCriterion(criterion.id)}
-              aria-pressed={isSelected}
               className={`w-full rounded-card border p-5 text-left transition ${
                 isSelected
                   ? "border-brand-500 bg-brand-50"
