@@ -1,26 +1,85 @@
 @import "tailwindcss";
 
+@theme {
+  /* ブランドカラー */
+  --color-brand-50: #f1f6f3;
+  --color-brand-100: #e1ece6;
+  --color-brand-200: #c6d9ce;
+  --color-brand-300: #9fbdad;
+  --color-brand-400: #719c86;
+  --color-brand-500: #4d7c67;
+  --color-brand-600: #315c4c;
+  --color-brand-700: #284b3f;
+  --color-brand-800: #213d34;
+  --color-brand-900: #1c332c;
+
+  /* 背景・文字 */
+  --color-canvas: #edf1ed;
+  --color-surface: #f8faf8;
+  --color-card: #ffffff;
+  --color-ink: #1f2a25;
+  --color-muted: #68746e;
+  --color-border: #dce5df;
+
+  /* 共通角丸 */
+  --radius-card: 1.5rem;
+  --radius-button: 1rem;
+  --radius-input: 1rem;
+
+  /* 共通影 */
+  --shadow-soft:
+    0 1px 2px rgb(31 42 37 / 0.04),
+    0 8px 24px rgb(31 42 37 / 0.06);
+
+  --shadow-lifted:
+    0 2px 4px rgb(31 42 37 / 0.05),
+    0 12px 32px rgb(31 42 37 / 0.1);
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+* {
+  box-sizing: border-box;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--color-canvas);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  margin: 0;
+  min-height: 100vh;
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family:
+    Arial,
+    "Hiragino Kaku Gothic ProN",
+    "Hiragino Sans",
+    "Yu Gothic",
+    Meiryo,
+    sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+::selection {
+  background: var(--color-brand-200);
+  color: var(--color-brand-900);
 }
