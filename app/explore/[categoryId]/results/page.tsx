@@ -12,7 +12,6 @@ import { calculateMatch } from "@/lib/calculateMatch";
 export default function ResultsPage() {
   const params = useParams<{ categoryId: string }>();
   const searchParams = useSearchParams();
-
   const categoryId = params.categoryId;
 
   const selectedCriteria = Array.from(

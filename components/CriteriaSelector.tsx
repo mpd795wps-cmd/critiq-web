@@ -19,7 +19,6 @@ export default function CriteriaSelector({
   criteria,
 }: CriteriaSelectorProps) {
   const router = useRouter();
-
   const [selectedCriteria, setSelectedCriteria] =
     useState<string[]>([]);
 

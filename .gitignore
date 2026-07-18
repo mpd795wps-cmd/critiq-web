@@ -43,3 +43,6 @@ next-env.d.ts
 .vscode-shared/
 .vscode/
 .vscode-shared/
+# Local patch backups
+backups/
+backup-results-*/

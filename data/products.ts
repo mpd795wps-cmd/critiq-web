@@ -9,26 +9,11 @@ export const products: Product[] = [
     price: 29800,
     reviewCount: 126,
     ratings: {
-      "easy-setup": {
-        score: 4.8,
-        count: 126,
-      },
-      lightweight: {
-        score: 4.1,
-        count: 98,
-      },
-      "wind-resistant": {
-        score: 4.3,
-        count: 110,
-      },
-      waterproof: {
-        score: 4.2,
-        count: 87,
-      },
-      spacious: {
-        score: 4.7,
-        count: 143,
-      },
+      "easy-setup": { score: 4.8, count: 126 },
+      lightweight: { score: 4.1, count: 98 },
+      "wind-resistant": { score: 4.3, count: 110 },
+      waterproof: { score: 4.2, count: 87 },
+      spacious: { score: 4.7, count: 143 },
     },
   },
   {
@@ -39,26 +24,11 @@ export const products: Product[] = [
     price: 24800,
     reviewCount: 105,
     ratings: {
-      "easy-setup": {
-        score: 4.4,
-        count: 84,
-      },
-      lightweight: {
-        score: 4.9,
-        count: 105,
-      },
-      "wind-resistant": {
-        score: 4.0,
-        count: 68,
-      },
-      waterproof: {
-        score: 4.1,
-        count: 72,
-      },
-      spacious: {
-        score: 3.6,
-        count: 77,
-      },
+      "easy-setup": { score: 4.4, count: 84 },
+      lightweight: { score: 4.9, count: 105 },
+      "wind-resistant": { score: 4.0, count: 68 },
+      waterproof: { score: 4.1, count: 72 },
+      spacious: { score: 3.6, count: 77 },
     },
   },
   {
@@ -69,26 +39,11 @@ export const products: Product[] = [
     price: 69800,
     reviewCount: 132,
     ratings: {
-      "easy-setup": {
-        score: 3.7,
-        count: 74,
-      },
-      lightweight: {
-        score: 2.9,
-        count: 58,
-      },
-      "wind-resistant": {
-        score: 4.8,
-        count: 103,
-      },
-      waterproof: {
-        score: 4.7,
-        count: 96,
-      },
-      spacious: {
-        score: 4.9,
-        count: 132,
-      },
+      "easy-setup": { score: 3.7, count: 74 },
+      lightweight: { score: 2.9, count: 58 },
+      "wind-resistant": { score: 4.8, count: 103 },
+      waterproof: { score: 4.7, count: 96 },
+      spacious: { score: 4.9, count: 132 },
     },
   },
 ];

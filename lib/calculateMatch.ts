@@ -53,14 +53,12 @@ export function calculateMatch(
     )
     .sort((a, b) => b.score - a.score);
 
-  const matchedScoreTotal = matchedCriteria.reduce(
-    (total, criterion) => total + criterion.score,
-    0,
-  );
-
   const averageScore =
     matchedCriteria.length > 0
-      ? matchedScoreTotal / matchedCriteria.length
+      ? matchedCriteria.reduce(
+          (total, criterion) => total + criterion.score,
+          0,
+        ) / matchedCriteria.length
       : 0;
 
   const allRatings = Object.values(product.ratings);
@@ -73,10 +71,8 @@ export function calculateMatch(
         ) / allRatings.length
       : 0;
 
-  const percentage = Math.round((averageScore / 5) * 100);
-
   return {
-    percentage,
+    percentage: Math.round((averageScore / 5) * 100),
     averageScore: roundToOneDecimal(averageScore),
     overallAverageScore: roundToOneDecimal(
       overallAverageScore,
