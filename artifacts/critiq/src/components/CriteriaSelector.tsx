@@ -78,7 +78,7 @@ export default function CriteriaSelector({ categoryId, criteria }: CriteriaSelec
 
       {/* 固定フッターボタン：基準選択時のみ表示 */}
       <div
-        className={`fixed bottom-[64px] left-1/2 z-10 w-full max-w-[480px] -translate-x-1/2 border-t border-[#dce5df] bg-[#f8faf8]/95 px-5 py-4 backdrop-blur transition-all duration-300 ${
+        className={`fixed bottom-0 left-1/2 z-10 w-full max-w-[480px] -translate-x-1/2 border-t border-[#dce5df] bg-[#f8faf8]/95 px-5 py-4 backdrop-blur transition-all duration-300 ${
           hasSelection ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'
         }`}
       >

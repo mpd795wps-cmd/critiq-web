@@ -3,7 +3,6 @@ import { getCriterionLabel } from '@/data/criteria';
 import { products } from '@/data/products';
 import { calculateMatch } from '@/lib/calculateMatch';
 import ProductCard from '@/components/ProductCard';
-import BottomNavigation from '@/components/BottomNavigation';
 
 export default function Results() {
   const { categoryId } = useParams<{ categoryId: string }>();
@@ -33,14 +32,22 @@ export default function Results() {
     );
 
   return (
-    <main className="min-h-screen bg-slate-50 pb-28">
+    <main className="min-h-screen bg-slate-50 pb-12">
       <div className="mx-auto max-w-md px-5 py-6">
-        <Link
-          href={`/explore/${categoryId}`}
-          className="text-sm font-semibold text-slate-600"
-        >
-          ← 基準選択に戻る
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link
+            href={`/explore/${categoryId}`}
+            className="text-sm font-semibold text-slate-600"
+          >
+            ← 基準選択に戻る
+          </Link>
+          <Link
+            href="/grow"
+            className="rounded-full border border-[#315c4c] px-3 py-1.5 text-xs font-bold text-[#315c4c] transition hover:bg-[#315c4c] hover:text-white"
+          >
+            育てる →
+          </Link>
+        </div>
 
         <header className="mt-6">
           <p className="text-sm font-semibold text-emerald-700">CRITIQ</p>
@@ -87,8 +94,6 @@ export default function Results() {
           )}
         </section>
       </div>
-
-      <BottomNavigation />
     </main>
   );
 }

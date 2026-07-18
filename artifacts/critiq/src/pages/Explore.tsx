@@ -1,15 +1,22 @@
 import { Link } from 'wouter';
 import { categories } from '@/data/categories';
-import BottomNavigation from '@/components/BottomNavigation';
 
 export default function Explore() {
   return (
     <main className="min-h-screen bg-[#edf1ed] text-[#1f2a25]">
-      <div className="mx-auto min-h-screen w-full max-w-[480px] bg-[#f8faf8] pb-28">
+      <div className="mx-auto min-h-screen w-full max-w-[480px] bg-[#f8faf8] pb-12">
         <header className="px-5 pb-6 pt-8">
-          <Link href="/" className="inline-flex items-center text-sm font-bold text-[#315c4c]">
-            ← ホーム
-          </Link>
+          <div className="flex items-center justify-between">
+            <Link href="/" className="inline-flex items-center text-sm font-bold text-[#315c4c]">
+              ← ホーム
+            </Link>
+            <Link
+              href="/grow"
+              className="rounded-full border border-[#315c4c] px-3 py-1.5 text-xs font-bold text-[#315c4c] transition hover:bg-[#315c4c] hover:text-white"
+            >
+              育てる →
+            </Link>
+          </div>
           <h1 className="mt-6 text-3xl font-bold">探す</h1>
           <p className="mt-2 text-sm leading-6 text-[#68746e]">
             あなたが重視する基準に合う商品を見つけましょう。
@@ -70,7 +77,6 @@ export default function Explore() {
           </Link>
         </section>
 
-        <BottomNavigation />
       </div>
     </main>
   );

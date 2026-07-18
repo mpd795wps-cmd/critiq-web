@@ -2,7 +2,6 @@ import { Link, useParams } from 'wouter';
 import { categories } from '@/data/categories';
 import { criteriaByCategory } from '@/data/criteria';
 import CriteriaSelector from '@/components/CriteriaSelector';
-import BottomNavigation from '@/components/BottomNavigation';
 
 export default function Category() {
   const { categoryId } = useParams<{ categoryId: string }>();
@@ -25,10 +24,18 @@ export default function Category() {
 
   return (
     <main className="min-h-screen bg-[#edf1ed] text-[#1f2a25]">
-      <div className="mx-auto min-h-screen w-full max-w-[480px] bg-[#f8faf8] px-5 pb-32 pt-8">
-        <Link href="/explore" className="inline-flex text-sm font-bold text-[#315c4c]">
-          ← カテゴリ一覧
-        </Link>
+      <div className="mx-auto min-h-screen w-full max-w-[480px] bg-[#f8faf8] px-5 pb-24 pt-8">
+        <div className="flex items-center justify-between">
+          <Link href="/explore" className="inline-flex text-sm font-bold text-[#315c4c]">
+            ← カテゴリ一覧
+          </Link>
+          <Link
+            href="/grow"
+            className="rounded-full border border-[#315c4c] px-3 py-1.5 text-xs font-bold text-[#315c4c] transition hover:bg-[#315c4c] hover:text-white"
+          >
+            育てる →
+          </Link>
+        </div>
 
         <header className="mt-7">
           <div className="flex items-center gap-3">
@@ -64,8 +71,6 @@ export default function Category() {
             </div>
           )}
         </section>
-
-        <BottomNavigation />
       </div>
     </main>
   );

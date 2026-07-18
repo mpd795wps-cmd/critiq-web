@@ -1,3 +1,4 @@
+import { Link } from 'wouter';
 import type { MatchCriterion, MatchResult, Product } from '@/types/product';
 
 type ProductCardProps = {
@@ -89,12 +90,12 @@ export default function ProductCard({ product, match }: ProductCardProps) {
         </section>
       )}
 
-      <button
-        type="button"
-        className="mt-5 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+      <Link
+        href={`/product/${product.id}`}
+        className="mt-5 block w-full rounded-2xl border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
       >
-        商品を見る
-      </button>
+        商品詳細を見る
+      </Link>
     </article>
   );
 }

@@ -4,6 +4,7 @@ import Explore from '@/pages/Explore';
 import Category from '@/pages/Category';
 import Results from '@/pages/Results';
 import Grow from '@/pages/Grow';
+import ProductDetail from '@/pages/ProductDetail';
 import NotFound from '@/pages/NotFound';
 
 function Router() {
@@ -14,6 +15,7 @@ function Router() {
       <Route path="/explore/:categoryId/results" component={Results} />
       <Route path="/explore/:categoryId" component={Category} />
       <Route path="/grow" component={Grow} />
+      <Route path="/product/:productId" component={ProductDetail} />
       <Route component={NotFound} />
     </Switch>
   );

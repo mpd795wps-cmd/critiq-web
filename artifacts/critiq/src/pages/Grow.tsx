@@ -1,13 +1,20 @@
 import { Link } from 'wouter';
-import BottomNavigation from '@/components/BottomNavigation';
 
 export default function Grow() {
   return (
     <main className="min-h-screen bg-[#edf1ed] text-[#1f2a25]">
-      <div className="mx-auto min-h-screen w-full max-w-[480px] bg-[#f8faf8] px-5 pb-28 pt-8">
-        <Link href="/" className="inline-flex text-sm font-bold text-[#315c4c]">
-          ← ホーム
-        </Link>
+      <div className="mx-auto min-h-screen w-full max-w-[480px] bg-[#f8faf8] px-5 pb-12 pt-8">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="inline-flex text-sm font-bold text-[#315c4c]">
+            ← ホーム
+          </Link>
+          <Link
+            href="/explore"
+            className="rounded-full border border-[#315c4c] px-3 py-1.5 text-xs font-bold text-[#315c4c] transition hover:bg-[#315c4c] hover:text-white"
+          >
+            ← 探す
+          </Link>
+        </div>
 
         <h1 className="mt-8 text-3xl font-bold">育てる</h1>
 
@@ -46,8 +53,6 @@ export default function Grow() {
             </p>
           </Link>
         </section>
-
-        <BottomNavigation />
       </div>
     </main>
   );
