@@ -32,8 +32,10 @@ export default function CriteriaSelector({ categoryId, criteria }: CriteriaSelec
     navigate(`/explore/${encodeURIComponent(categoryId)}/results?${query}`);
   };
 
+  const hasSelection = selectedCriteria.length > 0;
+
   return (
-    <div>
+    <>
       <div className="space-y-3">
         {criteria.map((criterion) => {
           const isSelected = selectedCriteria.includes(criterion.id);
@@ -74,19 +76,20 @@ export default function CriteriaSelector({ categoryId, criteria }: CriteriaSelec
         })}
       </div>
 
-      <div className="mt-8">
+      {/* 固定フッターボタン：基準選択時のみ表示 */}
+      <div
+        className={`fixed bottom-[64px] left-1/2 z-10 w-full max-w-[480px] -translate-x-1/2 border-t border-[#dce5df] bg-[#f8faf8]/95 px-5 py-4 backdrop-blur transition-all duration-300 ${
+          hasSelection ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'
+        }`}
+      >
         <button
           type="button"
           onClick={handleSearch}
-          disabled={selectedCriteria.length === 0}
-          className="w-full rounded-2xl bg-[#315c4c] px-5 py-4 font-bold text-white transition hover:bg-[#284b3f] disabled:cursor-not-allowed disabled:bg-gray-300"
+          className="w-full rounded-2xl bg-[#315c4c] px-5 py-4 font-bold text-white transition hover:bg-[#284b3f]"
         >
-          この基準で探す
+          この基準で探す（{selectedCriteria.length}件選択中）
         </button>
-        <p className="mt-3 text-center text-sm text-[#68746e]">
-          {selectedCriteria.length}件の基準を選択中
-        </p>
       </div>
-    </div>
+    </>
   );
 }
