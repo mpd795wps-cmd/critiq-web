@@ -32,12 +32,9 @@ function CriterionRow({
   return (
     <li className="flex items-center justify-between gap-3 py-2">
       <div className="flex min-w-0 items-center gap-2">
-        <span
-          className={selected ? 'font-bold text-emerald-600' : 'font-bold text-slate-400'}
-          aria-hidden="true"
-        >
-          {selected ? '✔' : '△'}
-        </span>
+        {selected && (
+          <span className="font-bold text-emerald-600" aria-hidden="true">✔</span>
+        )}
         <span className="truncate text-sm font-medium text-slate-700">{criterion.name}</span>
       </div>
       <StarRating score={criterion.score} />

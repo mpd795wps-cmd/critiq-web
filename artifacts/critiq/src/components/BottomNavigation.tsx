@@ -17,15 +17,14 @@ export default function BottomNavigation() {
       {navigationItems.map((item) => {
         const Icon = item.icon;
         const isActive = pathname.startsWith(item.href);
+        if (isActive) return null;
         return (
           <Link
             key={item.href}
             href={item.href}
-            className={`flex flex-1 flex-col items-center gap-1 rounded-xl py-1 transition ${
-              isActive ? 'text-[#315c4c]' : 'text-[#68746e] hover:text-[#315c4c]'
-            }`}
+            className="flex flex-1 flex-col items-center gap-1 rounded-xl py-1 text-[#68746e] transition hover:text-[#315c4c]"
           >
-            <Icon aria-hidden="true" size={22} strokeWidth={isActive ? 2.5 : 2} />
+            <Icon aria-hidden="true" size={22} strokeWidth={2} />
             <span className="text-xs font-bold">{item.label}</span>
           </Link>
         );
