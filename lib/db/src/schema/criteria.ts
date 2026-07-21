@@ -20,6 +20,7 @@ export const criteriaTable = pgTable("criteria", {
   createdByUsername: text("created_by_username"), // denormalized for fast reads; null = official
   // Engagement
   helpfulCount: integer("helpful_count").notNull().default(0),
+  searchCount: integer("search_count").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useParams, useSearch } from 'wouter';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -95,6 +95,14 @@ export default function Results() {
     queryFn: () => api.products.list(category!.id),
     enabled: !!category,
   });
+
+  // Track search: increment search_count for selected criteria (once per page load)
+  const trackedRef = useRef(false);
+  useEffect(() => {
+    if (trackedRef.current || selectedCriteriaIds.length === 0) return;
+    trackedRef.current = true;
+    api.criteria.trackSearch(selectedCriteriaIds).catch(() => {/* silent */});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const selectedCriteria = selectedCriteriaIds
     .map((id) => criteria.find((c) => c.id === id))

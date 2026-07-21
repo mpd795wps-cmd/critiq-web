@@ -17,6 +17,7 @@ export default function AdminCriteria() {
   const [adding, setAdding] = useState(false);
   const [editId, setEditId] = useState<number | null>(null);
   const [form, setForm] = useState({ categoryId: '', name: '', description: '', status: 'active', sortOrder: '0' });
+  const [applying, setApplying] = useState(false);
 
   function openAdd() {
     setForm({ categoryId: filterCategoryId || (categories[0]?.id.toString() ?? ''), name: '', description: '', status: 'active', sortOrder: String(criteria.length) });
@@ -71,6 +72,22 @@ export default function AdminCriteria() {
     qc.invalidateQueries({ queryKey: ['criteria'] });
   }
 
+  // Apply sort_order based on search_count ASC for a specific category
+  async function handleApplySearchOrder() {
+    if (!filterCategoryId) return;
+    const catId = parseInt(filterCategoryId, 10);
+    const catName = categories.find((c) => c.id === catId)?.name ?? '';
+    if (!confirm(`「${catName}」の基準を選択回数（昇順）で並べ直しますか？\n現在の手動順序が上書きされます。`)) return;
+    setApplying(true);
+    try {
+      await api.admin.criteria.applySearchOrder(catId);
+      qc.invalidateQueries({ queryKey: ['admin-criteria'] });
+      qc.invalidateQueries({ queryKey: ['criteria'] });
+    } finally {
+      setApplying(false);
+    }
+  }
+
   const showForm = adding || editId !== null;
 
   // Group by category for position tracking
@@ -95,12 +112,24 @@ export default function AdminCriteria() {
         <button onClick={openAdd} className="rounded-xl bg-[#315c4c] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#284b3f]">+ 追加</button>
       </div>
 
-      <div className="mt-4 flex gap-3">
+      <div className="mt-4 flex flex-wrap gap-3 items-center">
         <select value={filterCategoryId} onChange={(e) => setFilterCategoryId(e.target.value)}
           className="rounded-xl border border-[#dce5df] bg-white px-3 py-2 text-sm outline-none focus:border-[#315c4c]">
           <option value="">すべてのカテゴリ</option>
           {categories.map((c) => <option key={c.id} value={String(c.id)}>{c.name}</option>)}
         </select>
+
+        {filterCategoryId && (
+          <button
+            onClick={handleApplySearchOrder}
+            disabled={applying}
+            className="rounded-xl border border-[#315c4c] px-3 py-2 text-sm font-bold text-[#315c4c] transition hover:bg-[#f1f6f3] disabled:opacity-50"
+            title="検索で選択された回数（昇順）で表示順を並べ直します"
+          >
+            {applying ? '更新中…' : '🔃 選択回数順に並べ直す'}
+          </button>
+        )}
+
         <span className="ml-auto text-sm text-[#68746e] self-center">{criteria.length} 件</span>
       </div>
 
@@ -161,6 +190,7 @@ export default function AdminCriteria() {
                 <th className="px-3 py-3 text-left font-bold text-[#68746e]">順</th>
                 <th className="px-4 py-3 text-left font-bold text-[#68746e]">基準名</th>
                 <th className="px-4 py-3 text-left font-bold text-[#68746e]">カテゴリ</th>
+                <th className="px-4 py-3 text-left font-bold text-[#68746e]">選択回数</th>
                 <th className="px-4 py-3 text-left font-bold text-[#68746e]">ステータス</th>
                 <th className="px-4 py-3 text-left font-bold text-[#68746e]">操作</th>
               </tr>
@@ -190,6 +220,10 @@ export default function AdminCriteria() {
                     {c.description && <p className="text-xs text-[#68746e]">{c.description}</p>}
                   </td>
                   <td className="px-4 py-3 text-[#68746e]">{categories.find((cat) => cat.id === c.categoryId)?.name ?? c.categoryId}</td>
+                  <td className="px-4 py-3">
+                    <span className="font-mono text-sm text-slate-700">{c.searchCount}</span>
+                    <span className="ml-1 text-xs text-slate-400">回</span>
+                  </td>
                   <td className="px-4 py-3">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${c.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                       {c.status === 'active' ? '公開中' : '非公開'}

@@ -18,6 +18,7 @@ export type ApiCriterion = {
   isOfficial: boolean;
   createdByUsername: string | null;
   helpfulCount: number;
+  searchCount: number;
 };
 
 export type ApiRatingEntry = {

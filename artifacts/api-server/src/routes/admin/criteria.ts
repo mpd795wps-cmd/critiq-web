@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, criteriaTable } from "@workspace/db";
-import { eq, asc, and } from "drizzle-orm";
+import { eq, asc, and, inArray } from "drizzle-orm";
 import { requireAdmin } from "../../lib/adminAuth";
 
 const router = Router();
@@ -9,6 +9,7 @@ router.use(requireAdmin);
 const toDto = (c: typeof criteriaTable.$inferSelect) => ({
   id: c.id, categoryId: c.categoryId, name: c.name,
   description: c.description, status: c.status, sortOrder: c.sortOrder,
+  searchCount: c.searchCount,
 });
 
 router.get("/admin/criteria", async (req, res): Promise<void> => {
@@ -59,6 +60,34 @@ router.delete("/admin/criteria/:id", async (req, res): Promise<void> => {
   const [row] = await db.delete(criteriaTable).where(eq(criteriaTable.id, id)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
   res.sendStatus(204);
+});
+
+// POST /admin/criteria/apply-search-order?categoryId=N
+// Re-assigns sort_order values within a category based on search_count ASC
+router.post("/admin/criteria/apply-search-order", async (req, res): Promise<void> => {
+  const catId = req.query.categoryId ? parseInt(String(req.query.categoryId), 10) : NaN;
+  if (isNaN(catId)) { res.status(400).json({ error: "categoryId が必要です" }); return; }
+
+  const rows = await db
+    .select()
+    .from(criteriaTable)
+    .where(eq(criteriaTable.categoryId, catId))
+    .orderBy(asc(criteriaTable.searchCount), asc(criteriaTable.id));
+
+  // Assign 0, 1, 2, … in search_count ascending order
+  await Promise.all(
+    rows.map((r, i) =>
+      db.update(criteriaTable).set({ sortOrder: i }).where(eq(criteriaTable.id, r.id))
+    )
+  );
+
+  const updated = await db
+    .select()
+    .from(criteriaTable)
+    .where(eq(criteriaTable.categoryId, catId))
+    .orderBy(asc(criteriaTable.sortOrder));
+
+  res.json(updated.map(toDto));
 });
 
 export default router;

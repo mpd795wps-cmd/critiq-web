@@ -72,6 +72,7 @@ export const api = {
   criteria: {
     list: (categoryId: number) => get<ApiCriterion[]>(`/categories/${categoryId}/criteria`),
     helpful: (id: number) => post<{ ok: boolean; helpfulCount: number }>(`/criteria/${id}/helpful`),
+    trackSearch: (ids: number[]) => post<{ ok: boolean }>('/criteria/track-search', { ids }),
   },
   products: {
     list: (categoryId: number) => get<ApiProduct[]>(`/categories/${categoryId}/products`),
@@ -137,6 +138,8 @@ export const api = {
       update: (id: number, data: Partial<{ categoryId: number; name: string; description: string; status: string; sortOrder: number }>) =>
         put<ApiCriterion>(`/admin/criteria/${id}`, data),
       delete: (id: number) => del(`/admin/criteria/${id}`),
+      applySearchOrder: (categoryId: number) =>
+        post<ApiCriterion[]>(`/admin/criteria/apply-search-order?categoryId=${categoryId}`),
     },
 
     products: {
