@@ -35,11 +35,6 @@ export default function ProductRegistration() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // URL fetch state
-  const [productUrlInput, setProductUrlInput] = useState('');
-  const [urlFetching, setUrlFetching] = useState(false);
-  const [urlFetchError, setUrlFetchError] = useState('');
-
   function set(key: keyof FormState, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }));
     setErrors((prev) => ({ ...prev, [key]: '' }));
@@ -72,34 +67,6 @@ export default function ProductRegistration() {
         setJanLoading(false);
       }
     }, 600);
-  }
-
-  async function handleUrlFetch() {
-    const url = productUrlInput.trim();
-    if (!url) return;
-    setUrlFetchError('');
-    setUrlFetching(true);
-    try {
-      const data = await api.products.fetchUrl(url);
-      setForm((prev) => ({
-        ...prev,
-        name: prev.name || data.name || '',
-        brand: prev.brand || data.brand || '',
-        description: prev.description || data.description || '',
-        price: prev.price || (data.price ? String(data.price) : ''),
-      }));
-      if (data.images?.length) {
-        setFetchedImages((prev) => {
-          const merged = [...prev, ...data.images.filter((u: string) => !prev.includes(u))];
-          return merged;
-        });
-      }
-      setProductUrlInput('');
-    } catch (e) {
-      setUrlFetchError(e instanceof Error ? e.message : '取得に失敗しました');
-    } finally {
-      setUrlFetching(false);
-    }
   }
 
   async function handleFileUpload(files: FileList | null) {
@@ -211,35 +178,7 @@ export default function ProductRegistration() {
           <h1 className="mt-2 text-2xl font-bold">商品を登録する</h1>
           <p className="mt-2 text-sm leading-6 text-[#68746e]">まだ登録されていない商品の情報を教えてください。</p>
         </div>
-
-        {/* URL auto-fill */}
-        <div className="mx-5 mt-5 rounded-2xl border border-[#315c4c]/30 bg-[#f1f6f3] p-4">
-          <p className="text-sm font-bold text-[#315c4c]">🔗 URLから情報を自動入力</p>
-          <p className="mt-1 text-xs leading-5 text-[#68746e]">
-            メーカーサイトやAmazon、楽天などの商品ページURLを貼ると、商品名・説明・画像を自動で取得します。
-          </p>
-          <div className="mt-3 flex gap-2">
-            <input
-              type="url"
-              value={productUrlInput}
-              onChange={(e) => { setProductUrlInput(e.target.value); setUrlFetchError(''); }}
-              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleUrlFetch())}
-              placeholder="https://..."
-              className="min-w-0 flex-1 rounded-xl border border-[#dce5df] bg-white px-3 py-2 text-sm outline-none focus:border-[#315c4c] transition"
-            />
-            <button
-              type="button"
-              onClick={handleUrlFetch}
-              disabled={urlFetching || !productUrlInput.trim()}
-              className="shrink-0 rounded-xl bg-[#315c4c] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#284b3f] disabled:opacity-50"
-            >
-              {urlFetching ? '取得中…' : '取得'}
-            </button>
-          </div>
-          {urlFetchError && <p className="mt-2 text-xs text-red-500">{urlFetchError}</p>}
-        </div>
-
-        <form onSubmit={handleSubmit} noValidate className="mt-5 space-y-5 px-5">
+        <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-5 px-5">
           {/* JAN code */}
           <div>
             <label className={labelClass}>JANコード <span className="text-slate-400 font-normal text-xs">（入力すると自動取得）</span></label>
@@ -284,7 +223,7 @@ export default function ProductRegistration() {
           {/* Description */}
           <div>
             <label className={labelClass}>商品説明 <span className="text-slate-400 font-normal text-xs">（任意）</span></label>
-            <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} placeholder="URLまたはJANコードで自動取得、または手入力" className={`${inputClass} mt-2 resize-none`} />
+            <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} placeholder="JANコードで自動取得、または手入力" className={`${inputClass} mt-2 resize-none`} />
           </div>
 
           {/* Price */}
@@ -298,7 +237,6 @@ export default function ProductRegistration() {
           <div>
             <label className={labelClass}>商品画像 <span className="text-slate-400 font-normal text-xs">（任意・複数可）</span></label>
 
-            {/* Preview grid */}
             {allImages.length > 0 && (
               <div className="mt-2 flex flex-wrap gap-2">
                 {fetchedImages.map((img) => (
@@ -318,7 +256,6 @@ export default function ProductRegistration() {
               </div>
             )}
 
-            {/* File upload */}
             <div className="mt-2 flex items-center gap-2">
               <button type="button" onClick={() => fileInputRef.current?.click()}
                 disabled={uploadingFile}
@@ -330,7 +267,6 @@ export default function ProductRegistration() {
             <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
               onChange={(e) => handleFileUpload(e.target.files)} />
 
-            {/* URL input */}
             <div className="mt-2 flex gap-2">
               <input type="url" value={urlInput} onChange={(e) => setUrlInput(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addUrlImage())}

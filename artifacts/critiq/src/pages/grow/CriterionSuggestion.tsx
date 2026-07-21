@@ -40,7 +40,7 @@ function CriterionBadge({ criterion }: { criterion: ApiCriterion }) {
 }
 
 export default function CriterionSuggestion() {
-  const { user } = useUser();
+  const { user, loading } = useUser();
   const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => api.categories.list() });
 
   const [step, setStep] = useState<Step>('form');

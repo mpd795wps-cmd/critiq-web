@@ -55,6 +55,9 @@ function ProductForm({
   const [janLoading, setJanLoading] = useState(false);
   const [janMsg, setJanMsg] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [urlInput, setUrlInput] = useState('');
+  const [urlFetching, setUrlFetching] = useState(false);
+  const [urlMsg, setUrlMsg] = useState('');
 
   const set = useCallback((key: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -91,6 +94,30 @@ function ProductForm({
     }, 600);
   }
 
+  async function handleUrlFetch() {
+    const url = urlInput.trim();
+    if (!url) return;
+    setUrlMsg('');
+    setUrlFetching(true);
+    try {
+      const data = await api.products.fetchUrl(url);
+      setForm((prev) => ({
+        ...prev,
+        name: prev.name || data.name || '',
+        brand: prev.brand || data.brand || '',
+        description: prev.description || data.description || '',
+        price: prev.price || (data.price ? String(data.price) : ''),
+        imageUrls: prev.imageUrls || (data.images?.join('\n') ?? ''),
+      }));
+      setUrlMsg('✓ 情報を取得しました');
+      setUrlInput('');
+    } catch (e) {
+      setUrlMsg(e instanceof Error ? e.message : '取得に失敗しました');
+    } finally {
+      setUrlFetching(false);
+    }
+  }
+
   const inputClass = 'mt-1 w-full rounded-xl border border-[#dce5df] px-3 py-2 text-sm outline-none focus:border-[#315c4c] transition';
   const labelClass = 'block text-xs font-bold text-[#68746e]';
 
@@ -100,6 +127,33 @@ function ProductForm({
         <h2 className="font-bold text-[#1f2a25]">{title}</h2>
         <button onClick={onCancel} className="text-xl leading-none text-[#68746e] hover:text-[#1f2a25]">×</button>
       </div>
+      {/* URL auto-fill */}
+      <div className="border-b border-[#dce5df] px-6 py-4 bg-[#f8faf8]">
+        <p className="text-xs font-bold text-[#315c4c]">🔗 URLから情報を自動入力</p>
+        <p className="mt-0.5 text-xs text-[#68746e]">商品ページのURLを貼ると商品名・説明・画像を自動取得します</p>
+        <div className="mt-2 flex gap-2">
+          <input
+            type="url"
+            value={urlInput}
+            onChange={(e) => { setUrlInput(e.target.value); setUrlMsg(''); }}
+            onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleUrlFetch())}
+            placeholder="https://..."
+            className="min-w-0 flex-1 rounded-xl border border-[#dce5df] bg-white px-3 py-2 text-sm outline-none focus:border-[#315c4c] transition"
+          />
+          <button
+            type="button"
+            onClick={handleUrlFetch}
+            disabled={urlFetching || !urlInput.trim()}
+            className="shrink-0 rounded-xl bg-[#315c4c] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#284b3f] disabled:opacity-50"
+          >
+            {urlFetching ? '取得中…' : '取得'}
+          </button>
+        </div>
+        {urlMsg && (
+          <p className={`mt-1.5 text-xs ${urlMsg.startsWith('✓') ? 'text-emerald-600' : 'text-red-500'}`}>{urlMsg}</p>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 gap-4 px-6 py-5 sm:grid-cols-2">
 
         {/* JAN code — full width */}
