@@ -8,12 +8,14 @@ import productsRouter from "./public/products";
 import suggestionsRouter from "./public/suggestions";
 import fetchUrlRouter from "./public/fetchUrl";
 import authRouter from "./auth";
+import userRouter from "./user";
 import adminAuthRouter from "./admin/auth";
 import adminCategoriesRouter from "./admin/categories";
 import adminCriteriaRouter from "./admin/criteria";
 import adminProductsRouter from "./admin/products";
 import adminSuggestionsRouter from "./admin/suggestions";
 import adminUsersRouter from "./admin/users";
+import adminCategorySuggestionsRouter from "./admin/categorySuggestions";
 
 const router: IRouter = Router();
 
@@ -26,11 +28,13 @@ router.use(productsRouter);
 router.use(suggestionsRouter);
 router.use(fetchUrlRouter);
 router.use(authRouter);
+router.use(userRouter);
 router.use(adminAuthRouter);
 router.use(adminCategoriesRouter);
 router.use(adminCriteriaRouter);
 router.use(adminProductsRouter);
 router.use(adminSuggestionsRouter);
 router.use(adminUsersRouter);
+router.use(adminCategorySuggestionsRouter);
 
 export default router;

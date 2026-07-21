@@ -6,3 +6,5 @@ export * from "./productRatings";
 export * from "./suggestions";
 export * from "./users";
 export * from "./productRatingComments";
+export * from "./votes";
+export * from "./categorySuggestions";

@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { href: '/admin/categories', label: 'カテゴリ管理', icon: '🗂️' },
   { href: '/admin/suggestions/criteria', label: '基準提案', icon: '💡' },
   { href: '/admin/suggestions/products', label: '商品申請', icon: '🆕' },
+  { href: '/admin/suggestions/categories', label: 'カテゴリ提案', icon: '🏷️' },
   { href: '/admin/users', label: '会員管理', icon: '👥' },
 ];
 

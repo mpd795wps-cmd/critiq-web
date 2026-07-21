@@ -18,6 +18,7 @@ import AdminCriteria from '@/pages/admin/AdminCriteria';
 import AdminCategories from '@/pages/admin/AdminCategories';
 import AdminCriterionSuggestions from '@/pages/admin/AdminCriterionSuggestions';
 import AdminProductSuggestions from '@/pages/admin/AdminProductSuggestions';
+import AdminCategorySuggestions from '@/pages/admin/AdminCategorySuggestions';
 import AdminUsers from '@/pages/admin/AdminUsers';
 
 function Router() {
@@ -40,6 +41,7 @@ function Router() {
       <Route path="/admin/categories" component={AdminCategories} />
       <Route path="/admin/suggestions/criteria" component={AdminCriterionSuggestions} />
       <Route path="/admin/suggestions/products" component={AdminProductSuggestions} />
+      <Route path="/admin/suggestions/categories" component={AdminCategorySuggestions} />
       <Route path="/admin/users" component={AdminUsers} />
       <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />

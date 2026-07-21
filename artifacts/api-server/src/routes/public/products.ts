@@ -1,8 +1,14 @@
 import { Router } from "express";
-import { db, productsTable, productImagesTable, productRatingsTable, criteriaTable, productRatingCommentsTable } from "@workspace/db";
-import { eq, asc, and } from "drizzle-orm";
+import { db, productsTable, productImagesTable, productRatingsTable, criteriaTable, productRatingCommentsTable, ratingVotesTable } from "@workspace/db";
+import { eq, asc, and, sql } from "drizzle-orm";
 
 const router = Router();
+
+function getIp(req: import("express").Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") return forwarded.split(",")[0].trim();
+  return req.socket?.remoteAddress ?? "unknown";
+}
 
 // GET /products/:productId
 router.get("/products/:productId", async (req, res): Promise<void> => {
@@ -50,7 +56,7 @@ router.get("/products/:productId/comments", async (req, res): Promise<void> => {
   res.json(comments);
 });
 
-// POST /products/:productId/ratings
+// POST /products/:productId/ratings — IP dedup per criterion
 router.post("/products/:productId/ratings", async (req, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.productId) ? req.params.productId[0] : req.params.productId, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
@@ -63,11 +69,37 @@ router.post("/products/:productId/ratings", async (req, res): Promise<void> => {
   const [product] = await db.select({ id: productsTable.id }).from(productsTable).where(eq(productsTable.id, id));
   if (!product) { res.status(404).json({ error: "Product not found" }); return; }
 
-  // Upsert each criterion rating using weighted average
+  const ip = getIp(req);
+  const skipped: number[] = [];
+
   for (const [criterionIdStr, newScore] of Object.entries(scores)) {
     const criterionId = parseInt(criterionIdStr, 10);
     if (isNaN(criterionId) || newScore < 1 || newScore > 5) continue;
 
+    // IP dedup check
+    const [existingVote] = await db
+      .select({ id: ratingVotesTable.id, score: ratingVotesTable.score })
+      .from(ratingVotesTable)
+      .where(
+        sql`${ratingVotesTable.productId} = ${id} AND ${ratingVotesTable.criterionId} = ${criterionId} AND ${ratingVotesTable.ipAddress} = ${ip}`
+      );
+
+    if (existingVote) {
+      // Already voted for this criterion — skip
+      skipped.push(criterionId);
+      continue;
+    }
+
+    // Insert vote record
+    try {
+      await db.insert(ratingVotesTable).values({ productId: id, criterionId, ipAddress: ip, score: newScore });
+    } catch {
+      // Concurrent insert — skip
+      skipped.push(criterionId);
+      continue;
+    }
+
+    // Upsert weighted average
     const [existing] = await db
       .select()
       .from(productRatingsTable)
@@ -97,11 +129,15 @@ router.post("/products/:productId/ratings", async (req, res): Promise<void> => {
   }
 
   // Update review_count
-  await db.update(productsTable)
-    .set({ reviewCount: (await db.select({ count: productRatingsTable.count }).from(productRatingsTable).where(eq(productRatingsTable.productId, id))).reduce((a, b) => Math.max(a, b.count), 0) })
-    .where(eq(productsTable.id, id));
+  const allRatings = await db
+    .select({ count: productRatingsTable.count })
+    .from(productRatingsTable)
+    .where(eq(productRatingsTable.productId, id));
+  const reviewCount = allRatings.reduce((a, b) => Math.max(a, b.count), 0);
+  await db.update(productsTable).set({ reviewCount }).where(eq(productsTable.id, id));
 
-  res.json({ ok: true });
+  const accepted = Object.keys(scores).length - skipped.length;
+  res.json({ ok: true, accepted, skipped });
 });
 
 export default router;

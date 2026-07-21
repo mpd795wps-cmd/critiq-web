@@ -1,13 +1,46 @@
 import { Router } from "express";
-import { db, criteriaTable } from "@workspace/db";
+import { db, criteriaTable, helpfulVotesTable } from "@workspace/db";
 import { eq, sql, inArray } from "drizzle-orm";
 
 const router = Router();
 
-// POST /criteria/:id/helpful — increment helpful_count (no auth required)
+function getIp(req: import("express").Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") return forwarded.split(",")[0].trim();
+  return req.socket?.remoteAddress ?? "unknown";
+}
+
+// POST /criteria/:id/helpful — increment helpful_count (IP dedup)
 router.post("/criteria/:id/helpful", async (req, res): Promise<void> => {
   const id = parseInt(req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const ip = getIp(req);
+
+  // Check duplicate
+  const [existing] = await db
+    .select({ id: helpfulVotesTable.id })
+    .from(helpfulVotesTable)
+    .where(
+      sql`${helpfulVotesTable.criterionId} = ${id} AND ${helpfulVotesTable.ipAddress} = ${ip}`
+    );
+
+  if (existing) {
+    // Already voted — return current count without incrementing
+    const [criterion] = await db
+      .select({ helpfulCount: criteriaTable.helpfulCount })
+      .from(criteriaTable)
+      .where(eq(criteriaTable.id, id));
+    res.json({ ok: true, helpfulCount: criterion?.helpfulCount ?? 0, alreadyVoted: true });
+    return;
+  }
+
+  // Insert vote record
+  try {
+    await db.insert(helpfulVotesTable).values({ criterionId: id, ipAddress: ip });
+  } catch {
+    // Concurrent insert — ignore
+  }
 
   const [updated] = await db
     .update(criteriaTable)

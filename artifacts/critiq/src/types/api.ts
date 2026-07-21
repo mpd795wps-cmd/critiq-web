@@ -64,6 +64,7 @@ export type CriterionSuggestionItem = {
   description: string;
   reason: string | null;
   submitterUsername: string | null;
+  submitterEmail?: string | null;
   status: string;
   adminNotes: string | null;
   createdAt: string;
@@ -80,6 +81,17 @@ export type ProductSuggestionItem = {
   description: string | null;
   images: string[];
   status: string;
+  submitterEmail?: string | null;
+  adminNotes: string | null;
+  createdAt: string;
+};
+
+export type CategorySuggestionItem = {
+  id: number;
+  name: string;
+  description: string | null;
+  submitterEmail: string | null;
+  status: string;
   adminNotes: string | null;
   createdAt: string;
 };
@@ -88,4 +100,27 @@ export type UserInfo = {
   id: number;
   email: string;
   username: string | null;
+};
+
+export type MySubmission = {
+  criterionSuggestions: {
+    id: number;
+    categoryId: number;
+    categoryName: string | null;
+    name: string;
+    description: string;
+    status: string;
+    adminNotes: string | null;
+    createdAt: string;
+    helpfulCount: number | null;
+  }[];
+  productSuggestions: {
+    id: number;
+    categoryId: number;
+    name: string;
+    brand: string;
+    status: string;
+    adminNotes: string | null;
+    createdAt: string;
+  }[];
 };

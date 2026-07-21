@@ -1,4 +1,8 @@
-import type { ApiCategory, ApiCriterion, ApiProduct, AdminProductItem, CriterionSuggestionItem, ProductSuggestionItem, UserInfo } from '@/types/api';
+import type {
+  ApiCategory, ApiCriterion, ApiProduct, AdminProductItem,
+  CriterionSuggestionItem, ProductSuggestionItem, CategorySuggestionItem,
+  UserInfo, MySubmission,
+} from '@/types/api';
 
 const BASE = '/api';
 
@@ -71,7 +75,7 @@ export const api = {
   },
   criteria: {
     list: (categoryId: number) => get<ApiCriterion[]>(`/categories/${categoryId}/criteria`),
-    helpful: (id: number) => post<{ ok: boolean; helpfulCount: number }>(`/criteria/${id}/helpful`),
+    helpful: (id: number) => post<{ ok: boolean; helpfulCount: number; alreadyVoted?: boolean }>(`/criteria/${id}/helpful`),
     trackSearch: (ids: number[]) => post<{ ok: boolean }>('/criteria/track-search', { ids }),
   },
   products: {
@@ -81,7 +85,7 @@ export const api = {
     rate: (productId: number, data: { criterionId: number; score: number }) =>
       post<{ ok: boolean }>(`/products/${productId}/ratings`, data),
     submitRating: (productId: number, scores: Record<number, number>, comments?: Record<number, string>) =>
-      post<{ ok: boolean }>(`/products/${productId}/ratings`, {
+      post<{ ok: boolean; accepted?: number; skipped?: number[] }>(`/products/${productId}/ratings`, {
         scores: Object.fromEntries(Object.entries(scores).filter(([, v]) => (v as number) > 0)),
         comments: comments
           ? Object.fromEntries(Object.entries(comments).filter(([, v]) => (v as string).trim()))
@@ -113,7 +117,18 @@ export const api = {
     createProduct: (data: {
       categoryId: number; brand: string; name: string; modelNumber: string;
       janCode?: string; price?: number; description?: string; images?: string[];
+      pendingRatings?: Record<number, number>;
     }) => post<{ ok: boolean }>('/product-suggestions', data),
+    createCategory: (data: { name: string; description?: string }) =>
+      post<{ ok: boolean }>('/category-suggestions', data),
+  },
+
+  user: {
+    mySubmissions: () => get<MySubmission>('/user/my-submissions'),
+  },
+
+  jan: {
+    lookup: (code: string) => get<unknown>(`/jan/lookup/${code}`),
   },
 
   // ── Admin ───────────────────────────────────────────────
@@ -175,6 +190,13 @@ export const api = {
         brand?: string; name?: string; modelNumber?: string;
         janCode?: string; price?: number; description?: string; images?: string[];
       }) => patch<ProductSuggestionItem>(`/admin/product-suggestions/${id}/review`, data),
+    },
+
+    categorySuggestions: {
+      list: (status?: string) =>
+        get<CategorySuggestionItem[]>(`/admin/category-suggestions${status ? `?status=${status}` : ''}`),
+      review: (id: number, data: { status: 'approved' | 'rejected'; adminNotes?: string }) =>
+        patch<CategorySuggestionItem>(`/admin/category-suggestions/${id}/review`, data),
     },
 
     users: {
