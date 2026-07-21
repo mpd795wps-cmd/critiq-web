@@ -78,10 +78,15 @@ export const api = {
     get: (id: number) => get<ApiProduct>(`/products/${id}`),
     rate: (productId: number, data: { criterionId: number; score: number }) =>
       post<{ ok: boolean }>(`/products/${productId}/ratings`, data),
-    submitRating: (productId: number, scores: Record<number, number>) =>
+    submitRating: (productId: number, scores: Record<number, number>, comments?: Record<number, string>) =>
       post<{ ok: boolean }>(`/products/${productId}/ratings`, {
         scores: Object.fromEntries(Object.entries(scores).filter(([, v]) => (v as number) > 0)),
+        comments: comments
+          ? Object.fromEntries(Object.entries(comments).filter(([, v]) => (v as string).trim()))
+          : undefined,
       }),
+    comments: (productId: number) =>
+      get<{ id: number; criterionId: number; comment: string; createdAt: string }[]>(`/products/${productId}/comments`),
   },
   upload: {
     image: async (file: File): Promise<string> => {
@@ -166,6 +171,11 @@ export const api = {
         brand?: string; name?: string; modelNumber?: string;
         janCode?: string; price?: number; description?: string; images?: string[];
       }) => patch<ProductSuggestionItem>(`/admin/product-suggestions/${id}/review`, data),
+    },
+
+    users: {
+      list: () => get<{ id: number; email: string; username: string | null; createdAt: string }[]>('/admin/users'),
+      delete: (id: number) => del(`/admin/users/${id}`),
     },
   },
 };

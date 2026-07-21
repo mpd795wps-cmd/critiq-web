@@ -53,7 +53,40 @@ export default function AdminCriteria() {
     qc.invalidateQueries({ queryKey: ['criteria'] });
   }
 
+  // Move criterion up/down within the same category by swapping sortOrder
+  async function handleMove(c: ApiCriterion, direction: 'up' | 'down') {
+    const sameCat = criteria
+      .filter((x) => x.categoryId === c.categoryId)
+      .sort((a, b) => a.sortOrder - b.sortOrder);
+    const idx = sameCat.findIndex((x) => x.id === c.id);
+    const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (swapIdx < 0 || swapIdx >= sameCat.length) return;
+
+    const target = sameCat[swapIdx];
+    await Promise.all([
+      api.admin.criteria.update(c.id, { categoryId: c.categoryId, name: c.name, description: c.description ?? undefined, status: c.status, sortOrder: target.sortOrder }),
+      api.admin.criteria.update(target.id, { categoryId: target.categoryId, name: target.name, description: target.description ?? undefined, status: target.status, sortOrder: c.sortOrder }),
+    ]);
+    qc.invalidateQueries({ queryKey: ['admin-criteria'] });
+    qc.invalidateQueries({ queryKey: ['criteria'] });
+  }
+
   const showForm = adding || editId !== null;
+
+  // Group by category for position tracking
+  const catIdFilter = filterCategoryId ? parseInt(filterCategoryId, 10) : null;
+  const sortedCriteria = [...criteria].sort((a, b) =>
+    catIdFilter ? a.sortOrder - b.sortOrder : a.categoryId - b.categoryId || a.sortOrder - b.sortOrder
+  );
+
+  function isFirst(c: ApiCriterion) {
+    const sameCat = sortedCriteria.filter((x) => x.categoryId === c.categoryId);
+    return sameCat[0]?.id === c.id;
+  }
+  function isLast(c: ApiCriterion) {
+    const sameCat = sortedCriteria.filter((x) => x.categoryId === c.categoryId);
+    return sameCat[sameCat.length - 1]?.id === c.id;
+  }
 
   return (
     <AdminLayout>
@@ -103,6 +136,11 @@ export default function AdminCriteria() {
               <input value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="例: 組み立てや撤収が簡単か"
                 className="mt-1 w-full rounded-xl border border-[#dce5df] px-3 py-2 text-sm outline-none focus:border-[#315c4c]" />
             </div>
+            <div>
+              <label className="block text-xs font-bold text-[#68746e]">表示順（数値が小さいほど上位）</label>
+              <input type="number" value={form.sortOrder} onChange={(e) => setForm((f) => ({ ...f, sortOrder: e.target.value }))}
+                className="mt-1 w-32 rounded-xl border border-[#dce5df] px-3 py-2 text-sm outline-none focus:border-[#315c4c]" />
+            </div>
           </div>
           <div className="mt-4 flex gap-3">
             <button onClick={handleSave} className="rounded-xl bg-[#315c4c] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#284b3f]">保存</button>
@@ -114,12 +152,13 @@ export default function AdminCriteria() {
       <div className="mt-4 overflow-x-auto rounded-2xl border border-[#dce5df] bg-white">
         {isLoading ? (
           <div className="p-8 text-center text-sm text-[#68746e]">読み込み中…</div>
-        ) : criteria.length === 0 ? (
+        ) : sortedCriteria.length === 0 ? (
           <div className="p-8 text-center text-sm text-[#68746e]">基準がありません</div>
         ) : (
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#dce5df] bg-[#f8faf8]">
+                <th className="px-3 py-3 text-left font-bold text-[#68746e]">順</th>
                 <th className="px-4 py-3 text-left font-bold text-[#68746e]">基準名</th>
                 <th className="px-4 py-3 text-left font-bold text-[#68746e]">カテゴリ</th>
                 <th className="px-4 py-3 text-left font-bold text-[#68746e]">ステータス</th>
@@ -127,8 +166,25 @@ export default function AdminCriteria() {
               </tr>
             </thead>
             <tbody>
-              {criteria.map((c, i) => (
-                <tr key={c.id} className={`border-b border-[#dce5df] hover:bg-[#f8faf8] ${i === criteria.length - 1 ? 'border-b-0' : ''}`}>
+              {sortedCriteria.map((c, i) => (
+                <tr key={c.id} className={`border-b border-[#dce5df] hover:bg-[#f8faf8] ${i === sortedCriteria.length - 1 ? 'border-b-0' : ''}`}>
+                  <td className="px-3 py-3">
+                    <div className="flex flex-col gap-0.5">
+                      <button
+                        onClick={() => handleMove(c, 'up')}
+                        disabled={isFirst(c)}
+                        className="rounded px-1 py-0.5 text-xs text-slate-400 hover:bg-slate-100 disabled:opacity-20"
+                        title="上へ"
+                      >▲</button>
+                      <span className="text-center text-xs font-mono text-slate-400">{c.sortOrder}</span>
+                      <button
+                        onClick={() => handleMove(c, 'down')}
+                        disabled={isLast(c)}
+                        className="rounded px-1 py-0.5 text-xs text-slate-400 hover:bg-slate-100 disabled:opacity-20"
+                        title="下へ"
+                      >▼</button>
+                    </div>
+                  </td>
                   <td className="px-4 py-3">
                     <p className="font-bold text-[#1f2a25]">{c.name}</p>
                     {c.description && <p className="text-xs text-[#68746e]">{c.description}</p>}

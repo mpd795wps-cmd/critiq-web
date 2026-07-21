@@ -49,28 +49,62 @@ function HelpfulButton({ criterion, onHelped }: { criterion: ApiCriterion; onHel
       setHelped(true);
       setCount(res.helpfulCount);
       onHelped(criterion.id, res.helpfulCount);
-    } catch {
-      // silent
-    } finally {
-      setLoading(false);
-    }
+    } catch { /* silent */ } finally { setLoading(false); }
   }
 
   return (
-    <button
-      type="button"
-      onClick={handleClick}
-      disabled={helped || loading}
+    <button type="button" onClick={handleClick} disabled={helped || loading}
       className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition ${
-        helped
-          ? 'bg-[#315c4c] text-white'
-          : 'border border-[#dce5df] text-[#68746e] hover:border-[#315c4c] hover:text-[#315c4c]'
-      }`}
-      title="参考になった"
-    >
-      <span>👍</span>
-      <span>{count}</span>
+        helped ? 'bg-[#315c4c] text-white' : 'border border-[#dce5df] text-[#68746e] hover:border-[#315c4c] hover:text-[#315c4c]'
+      }`} title="参考になった">
+      <span>👍</span><span>{count}</span>
     </button>
+  );
+}
+
+type Comment = { id: number; criterionId: number; comment: string; createdAt: string };
+
+function CommentAccordion({ criterionId, productId }: { criterionId: number; productId: number }) {
+  const [open, setOpen] = useState(false);
+
+  const { data: allComments = [], isLoading } = useQuery<Comment[]>({
+    queryKey: ['product-comments', productId],
+    queryFn: () => api.products.comments(productId),
+    enabled: open,
+    staleTime: 30_000,
+  });
+
+  const comments = allComments.filter((c) => c.criterionId === criterionId);
+
+  return (
+    <div className="mt-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex items-center gap-1 text-xs font-semibold text-[#315c4c] transition hover:underline"
+      >
+        <span>{open ? '▲' : '▼'}</span>
+        <span>このコメントを見る{allComments.length > 0 && ` (${comments.length}件)`}</span>
+      </button>
+      {open && (
+        <div className="mt-2 space-y-2">
+          {isLoading ? (
+            <p className="text-xs text-slate-400 animate-pulse">読み込み中…</p>
+          ) : comments.length === 0 ? (
+            <p className="text-xs text-slate-400">まだコメントがありません</p>
+          ) : (
+            comments.map((c) => (
+              <div key={c.id} className="rounded-xl bg-slate-50 px-3 py-2.5">
+                <p className="text-sm leading-relaxed text-slate-700 whitespace-pre-line">{c.comment}</p>
+                <p className="mt-1 text-[10px] text-slate-400">
+                  {new Date(c.createdAt).toLocaleDateString('ja-JP', { year: 'numeric', month: 'short', day: 'numeric' })}
+                </p>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -110,9 +144,7 @@ export default function ProductDetail() {
       <main className="flex min-h-screen items-center justify-center bg-[#edf1ed]">
         <div className="text-center">
           <p className="text-lg font-bold text-[#315c4c]">商品が見つかりません</p>
-          <Link href="/explore" className="mt-4 inline-block text-sm text-[#315c4c] underline">
-            探すに戻る
-          </Link>
+          <Link href="/explore" className="mt-4 inline-block text-sm text-[#315c4c] underline">探すに戻る</Link>
         </div>
       </main>
     );
@@ -132,7 +164,6 @@ export default function ProductDetail() {
   }
 
   function handleHelped(criterionId: number, newCount: number) {
-    // Update the cached criteria list so the count is reflected everywhere
     queryClient.setQueryData<ApiCriterion[]>(['criteria', product!.categoryId], (prev) =>
       prev?.map((c) => c.id === criterionId ? { ...c, helpfulCount: newCount } : c) ?? []
     );
@@ -164,14 +195,10 @@ export default function ProductDetail() {
         {product.images.length > 1 && (
           <div className="mt-3 flex gap-2 overflow-x-auto px-5 pb-1">
             {product.images.map((url, index) => (
-              <button
-                key={url}
-                type="button"
-                onClick={() => setMainIndex(index)}
+              <button key={url} type="button" onClick={() => setMainIndex(index)}
                 className={`shrink-0 overflow-hidden rounded-xl border-2 transition ${
                   index === mainIndex ? 'border-[#315c4c]' : 'border-transparent opacity-60 hover:opacity-90'
-                }`}
-              >
+                }`}>
                 <img src={url} alt={`サブ画像 ${index + 1}`} className="h-16 w-16 object-cover" />
               </button>
             ))}
@@ -192,9 +219,9 @@ export default function ProductDetail() {
                 <span className="text-sm text-slate-500">（{product.reviewCount.toLocaleString('ja-JP')}件）</span>
               </div>
             )}
-            {/* Description */}
+            {/* Description with line-break support */}
             {product.description && (
-              <p className="mt-4 border-t border-slate-100 pt-4 text-sm leading-relaxed text-[#68746e]">
+              <p className="mt-4 border-t border-slate-100 pt-4 text-sm leading-relaxed text-[#68746e] whitespace-pre-line">
                 {product.description}
               </p>
             )}
@@ -203,10 +230,8 @@ export default function ProductDetail() {
 
         {/* Rate CTA */}
         <div className="mt-4 px-5">
-          <Link
-            href={`/grow/rating?productId=${product.id}`}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-[#315c4c] px-5 py-4 font-bold text-[#315c4c] transition hover:bg-[#315c4c] hover:text-white"
-          >
+          <Link href={`/grow/rating?productId=${product.id}`}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-[#315c4c] px-5 py-4 font-bold text-[#315c4c] transition hover:bg-[#315c4c] hover:text-white">
             <span aria-hidden="true">✎</span>
             <span>この商品を評価する</span>
           </Link>
@@ -241,16 +266,14 @@ export default function ProductDetail() {
                           <HelpfulButton criterion={criterion} onHelped={handleHelped} />
                         </div>
                       )}
+                      <CommentAccordion criterionId={r.criterionId} productId={product.id} />
                     </li>
                   );
                 })}
               </ul>
               {hasMore && (
-                <button
-                  type="button"
-                  onClick={() => setShowAllRatings((v) => !v)}
-                  className="mt-4 w-full rounded-xl border border-[#dce5df] py-2 text-xs font-bold text-[#315c4c] transition hover:bg-[#f1f6f3]"
-                >
+                <button type="button" onClick={() => setShowAllRatings((v) => !v)}
+                  className="mt-4 w-full rounded-xl border border-[#dce5df] py-2 text-xs font-bold text-[#315c4c] transition hover:bg-[#f1f6f3]">
                   {showAllRatings ? '折りたたむ' : `さらに見る（残り ${product.ratings.length - RATINGS_LIMIT} 件）`}
                 </button>
               )}

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { db, productsTable, productImagesTable, productRatingsTable, criteriaTable } from "@workspace/db";
+import { db, productsTable, productImagesTable, productRatingsTable, criteriaTable, productRatingCommentsTable } from "@workspace/db";
 import { eq, asc, and } from "drizzle-orm";
 
 const router = Router();
@@ -36,12 +36,26 @@ router.get("/products/:productId", async (req, res): Promise<void> => {
   });
 });
 
+// GET /products/:productId/comments
+router.get("/products/:productId/comments", async (req, res): Promise<void> => {
+  const id = parseInt(Array.isArray(req.params.productId) ? req.params.productId[0] : req.params.productId, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+
+  const comments = await db
+    .select({ id: productRatingCommentsTable.id, criterionId: productRatingCommentsTable.criterionId, comment: productRatingCommentsTable.comment, createdAt: productRatingCommentsTable.createdAt })
+    .from(productRatingCommentsTable)
+    .where(eq(productRatingCommentsTable.productId, id))
+    .orderBy(asc(productRatingCommentsTable.createdAt));
+
+  res.json(comments);
+});
+
 // POST /products/:productId/ratings
 router.post("/products/:productId/ratings", async (req, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.productId) ? req.params.productId[0] : req.params.productId, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
 
-  const { scores } = req.body as { scores?: Record<string, number> };
+  const { scores, comments } = req.body as { scores?: Record<string, number>; comments?: Record<string, string> };
   if (!scores || typeof scores !== "object") {
     res.status(400).json({ error: "scores object required" }); return;
   }
@@ -67,11 +81,17 @@ router.post("/products/:productId/ratings", async (req, res): Promise<void> => {
         .set({ score: String(newAvg.toFixed(2)), count: newCount })
         .where(and(eq(productRatingsTable.productId, id), eq(productRatingsTable.criterionId, criterionId)));
     } else {
-      // Validate criterion belongs to same category as product
       const [criterion] = await db.select({ id: criteriaTable.id }).from(criteriaTable).where(eq(criteriaTable.id, criterionId));
       if (!criterion) continue;
       await db.insert(productRatingsTable).values({
         productId: id, criterionId, score: String(newScore), count: 1,
+      });
+    }
+
+    // Save comment if provided
+    if (comments && typeof comments[criterionIdStr] === "string" && comments[criterionIdStr].trim()) {
+      await db.insert(productRatingCommentsTable).values({
+        productId: id, criterionId, comment: comments[criterionIdStr].trim(),
       });
     }
   }

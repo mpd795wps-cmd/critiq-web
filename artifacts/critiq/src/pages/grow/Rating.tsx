@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useSearch } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
@@ -8,7 +8,7 @@ function StarInput({ value, onChange }: { value: number; onChange: (n: number) =
   const [hovered, setHovered] = useState(0);
   const display = hovered || value;
   return (
-    <div className="flex gap-1">
+    <div className="flex gap-2">
       {[1, 2, 3, 4, 5].map((star) => (
         <button key={star} type="button" onClick={() => onChange(star === value ? 0 : star)}
           onMouseEnter={() => setHovered(star)} onMouseLeave={() => setHovered(0)}
@@ -92,16 +92,21 @@ export default function GrowRating() {
     queryFn: () => api.categories.list(),
   });
 
-  const initialProduct = initialProductId
-    ? (allProducts.find((p) => p.id === initialProductId) ?? null)
-    : null;
-
   const [step, setStep] = useState<'select' | 'rate' | 'done'>(initialProductId ? 'rate' : 'select');
-  const [selected, setSelected] = useState<ApiProduct | null>(initialProduct);
+  const [selected, setSelected] = useState<ApiProduct | null>(null);
   const [query, setQuery] = useState('');
   const [scores, setScores] = useState<Record<number, number>>({});
+  const [comments, setComments] = useState<Record<number, string>>({});
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Sync selected product when allProducts loads (for URL-based navigation)
+  useEffect(() => {
+    if (initialProductId && !selected && allProducts.length > 0) {
+      const found = allProducts.find((p) => p.id === initialProductId);
+      if (found) setSelected(found);
+    }
+  }, [allProducts, initialProductId, selected]);
 
   const filteredProducts = allProducts.filter(
     (p) => p.name.includes(query) || p.brand.toLowerCase().includes(query.toLowerCase()) || p.modelNumber.toLowerCase().includes(query.toLowerCase()),
@@ -121,7 +126,7 @@ export default function GrowRating() {
     setError('');
     setSubmitting(true);
     try {
-      await api.products.submitRating(selected.id, scores);
+      await api.products.submitRating(selected.id, scores, comments);
       setStep('done');
     } catch (e) {
       setError(e instanceof Error ? e.message : '送信に失敗しました');
@@ -166,7 +171,7 @@ export default function GrowRating() {
               const catName = categories.find((c) => c.id === p.categoryId)?.name ?? '';
               return (
                 <button key={p.id} type="button"
-                  onClick={() => { setSelected(p); setScores({}); setStep('rate'); }}
+                  onClick={() => { setSelected(p); setScores({}); setComments({}); setStep('rate'); }}
                   className="flex w-full items-center gap-4 rounded-2xl border border-[#dce5df] bg-white px-4 py-3 text-left shadow-sm transition hover:border-[#315c4c] hover:bg-[#f1f6f3]">
                   {p.images[0] && <img src={p.images[0]} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />}
                   <div className="min-w-0">
@@ -193,13 +198,27 @@ export default function GrowRating() {
             {selected.name} への評価ありがとうございます。<br />あなたの評価が次の選択者の役に立ちます。
           </p>
           <div className="mt-8 w-full space-y-3">
-            <button type="button" onClick={() => { setSelected(null); setScores({}); setStep('select'); }}
+            <button type="button" onClick={() => { setSelected(null); setScores({}); setComments({}); setStep('select'); }}
               className="w-full rounded-2xl bg-[#315c4c] px-5 py-4 font-bold text-white transition hover:bg-[#284b3f]">
               別の商品を評価する
             </button>
             <Link href="/grow" className="block w-full rounded-2xl border border-[#dce5df] px-5 py-4 text-center font-bold text-[#315c4c] transition hover:bg-[#f1f6f3]">
               育てるに戻る
             </Link>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
+  // Loading state while fetching product from URL
+  if (initialProductId && !selected) {
+    return (
+      <main className="min-h-screen bg-[#edf1ed] text-[#1f2a25]">
+        <div className="mx-auto min-h-screen w-full max-w-[480px] bg-[#f8faf8] pb-12">
+          {header}
+          <div className="flex flex-1 items-center justify-center py-24">
+            <div className="animate-pulse text-[#315c4c]">商品を読み込み中…</div>
           </div>
         </div>
       </main>
@@ -216,8 +235,12 @@ export default function GrowRating() {
           <p className="mt-1 text-sm leading-6 text-[#68746e]">実際に使った経験から各基準を5段階で。スキップ可。</p>
         </div>
         <div className="mt-4 space-y-3 px-5">
+          {criteria.length === 0 && (
+            <p className="py-6 text-center text-sm text-slate-400 animate-pulse">基準を読み込み中…</p>
+          )}
           {criteria.map((criterion) => {
             const score = scores[criterion.id] ?? 0;
+            const comment = comments[criterion.id] ?? '';
             return (
               <div key={criterion.id} className={`rounded-2xl border bg-white p-5 transition ${score > 0 ? 'border-[#4d7c67]' : 'border-[#dce5df]'}`}>
                 <div className="flex items-start justify-between gap-4">
@@ -231,6 +254,17 @@ export default function GrowRating() {
                   <StarInput value={score} onChange={(n) => setScores((prev) => ({ ...prev, [criterion.id]: n }))} />
                   {score === 0 && <span className="text-xs text-slate-400">タップして評価</span>}
                 </div>
+                {score > 0 && (
+                  <div className="mt-3">
+                    <textarea
+                      value={comment}
+                      onChange={(e) => setComments((prev) => ({ ...prev, [criterion.id]: e.target.value }))}
+                      placeholder="コメントを入力（任意）"
+                      rows={2}
+                      className="w-full resize-none rounded-xl border border-[#dce5df] bg-[#f8faf8] px-3 py-2 text-sm outline-none transition focus:border-[#315c4c] placeholder:text-slate-300"
+                    />
+                  </div>
+                )}
               </div>
             );
           })}

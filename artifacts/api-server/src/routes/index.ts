@@ -12,6 +12,7 @@ import adminCategoriesRouter from "./admin/categories";
 import adminCriteriaRouter from "./admin/criteria";
 import adminProductsRouter from "./admin/products";
 import adminSuggestionsRouter from "./admin/suggestions";
+import adminUsersRouter from "./admin/users";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(adminCategoriesRouter);
 router.use(adminCriteriaRouter);
 router.use(adminProductsRouter);
 router.use(adminSuggestionsRouter);
+router.use(adminUsersRouter);
 
 export default router;
