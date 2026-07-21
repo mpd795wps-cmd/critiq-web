@@ -265,6 +265,35 @@ export default function CriterionSuggestion() {
   }
 
   // ── FORM step ────────────────────────────────────────────────
+
+  // Login gate
+  if (!loading && !user) {
+    return (
+      <main className="min-h-screen bg-[#edf1ed] text-[#1f2a25]">
+        <div className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-[#f8faf8]">
+          {header}
+          <div className="flex flex-1 flex-col items-center justify-center px-5 pb-20">
+            <span className="text-5xl" aria-hidden="true">🔐</span>
+            <h1 className="mt-6 text-2xl font-bold">ログインが必要です</h1>
+            <p className="mt-3 text-center text-sm leading-6 text-[#68746e]">
+              基準の提案はログイン後にご利用いただけます。
+            </p>
+            <div className="mt-8 w-full space-y-3">
+              <Link href="/login"
+                className="block w-full rounded-2xl bg-[#315c4c] px-5 py-4 text-center font-bold text-white transition hover:bg-[#284b3f]">
+                ログイン
+              </Link>
+              <Link href="/register"
+                className="block w-full rounded-2xl border border-[#dce5df] px-5 py-4 text-center font-bold text-[#315c4c] transition hover:bg-[#f1f6f3]">
+                新規登録
+              </Link>
+            </div>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-[#edf1ed] text-[#1f2a25]">
       <div className="mx-auto min-h-screen w-full max-w-[480px] bg-[#f8faf8] pb-12">

@@ -75,6 +75,7 @@ export const api = {
     trackSearch: (ids: number[]) => post<{ ok: boolean }>('/criteria/track-search', { ids }),
   },
   products: {
+    fetchUrl: (url: string) => post<{ name: string; brand: string; description: string; images: string[]; price: number | null }>('/products/fetch-url', { url }),
     list: (categoryId: number) => get<ApiProduct[]>(`/categories/${categoryId}/products`),
     get: (id: number) => get<ApiProduct>(`/products/${id}`),
     rate: (productId: number, data: { criterionId: number; score: number }) =>
