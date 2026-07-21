@@ -1,15 +1,27 @@
 import { Link, useParams } from 'wouter';
-import { categories } from '@/data/categories';
-import { getAllCriteriaForCategory } from '@/data/criteria';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import CriteriaSelector from '@/components/CriteriaSelector';
 
 export default function Category() {
-  const { categoryId } = useParams<{ categoryId: string }>();
+  const { categorySlug } = useParams<{ categorySlug: string }>();
 
-  const category = categories.find((item) => item.id === categoryId);
-  const criteria = getAllCriteriaForCategory(categoryId ?? '');
+  const { data: categories = [], isLoading: loadingCats } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.categories.list(),
+  });
 
-  if (!category) {
+  const category = categories.find((c) => c.slug === categorySlug);
+
+  const { data: criteria = [], isLoading: loadingCriteria } = useQuery({
+    queryKey: ['criteria', category?.id],
+    queryFn: () => api.criteria.list(category!.id),
+    enabled: !!category,
+  });
+
+  const isLoading = loadingCats || (!!category && loadingCriteria);
+
+  if (!loadingCats && !category) {
     return (
       <main className="min-h-screen bg-[#edf1ed] flex items-center justify-center">
         <div className="text-center">
@@ -39,12 +51,10 @@ export default function Category() {
 
         <header className="mt-7">
           <div className="flex items-center gap-3">
-            <span className="text-4xl" aria-hidden="true">
-              {category.icon}
-            </span>
+            <span className="text-4xl" aria-hidden="true">{category?.icon ?? '…'}</span>
             <div>
               <p className="text-sm font-bold text-[#315c4c]">アウトドア用品</p>
-              <h1 className="mt-1 text-3xl font-bold">{category.name}</h1>
+              <h1 className="mt-1 text-3xl font-bold">{category?.name ?? '　'}</h1>
             </div>
           </div>
           <p className="mt-5 leading-7 text-[#68746e]">
@@ -60,8 +70,14 @@ export default function Category() {
             )}
           </div>
 
-          {criteria.length > 0 ? (
-            <CriteriaSelector categoryId={categoryId ?? ''} criteria={criteria} />
+          {isLoading ? (
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="h-20 animate-pulse rounded-[1.5rem] bg-slate-200" />
+              ))}
+            </div>
+          ) : criteria.length > 0 ? (
+            <CriteriaSelector categorySlug={categorySlug ?? ''} criteria={criteria} />
           ) : (
             <div className="rounded-[1.5rem] border border-dashed border-[#dce5df] bg-white p-6 text-center">
               <p className="font-bold text-[#284b3f]">基準を準備中です</p>

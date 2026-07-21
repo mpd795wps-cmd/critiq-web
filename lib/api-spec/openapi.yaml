@@ -1,22 +1,33 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: CRITIQ API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: categories
+    description: Category operations
+  - name: criteria
+    description: Criteria operations
+  - name: products
+    description: Product operations
+  - name: ratings
+    description: Rating operations
+  - name: suggestions
+    description: User suggestion operations
+  - name: admin
+    description: Admin operations
+
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,13 +35,974 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List all categories
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryItem"
+
+  /categories/{categoryId}/criteria:
+    get:
+      operationId: listCriteria
+      tags: [criteria]
+      summary: List active criteria for a category
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CriterionItem"
+        "404":
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /categories/{categoryId}/products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List active products in a category with ratings
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of products with ratings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductWithRatings"
+        "404":
+          description: Category not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{productId}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get product detail with ratings
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Product detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductWithRatings"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /products/{productId}/ratings:
+    post:
+      operationId: submitRating
+      tags: [ratings]
+      summary: Submit user ratings for a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RatingInput"
+      responses:
+        "200":
+          description: Ratings saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /criterion-suggestions:
+    post:
+      operationId: createCriterionSuggestion
+      tags: [suggestions]
+      summary: Submit a new criterion suggestion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriterionSuggestionInput"
+      responses:
+        "201":
+          description: Suggestion submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /product-suggestions:
+    post:
+      operationId: createProductSuggestion
+      tags: [suggestions]
+      summary: Submit a new product registration request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductSuggestionInput"
+      responses:
+        "201":
+          description: Suggestion submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "400":
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /jan/{code}:
+    get:
+      operationId: lookupJan
+      tags: [products]
+      summary: Look up product info by JAN code
+      parameters:
+        - name: code
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: JAN lookup result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JanLookupResult"
+
+  # ── Admin ──────────────────────────────────────────────────
+  /admin/login:
+    post:
+      operationId: adminLogin
+      tags: [admin]
+      summary: Admin login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminLoginInput"
+      responses:
+        "200":
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Invalid password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/logout:
+    post:
+      operationId: adminLogout
+      tags: [admin]
+      summary: Admin logout
+      responses:
+        "200":
+          description: Logged out
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /admin/me:
+    get:
+      operationId: adminMe
+      tags: [admin]
+      summary: Check admin auth status
+      responses:
+        "200":
+          description: Authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "401":
+          description: Not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/categories:
+    get:
+      operationId: adminListCategories
+      tags: [admin]
+      summary: List all categories (admin)
+      responses:
+        "200":
+          description: Categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CategoryItem"
+    post:
+      operationId: adminCreateCategory
+      tags: [admin]
+      summary: Create a category
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryItem"
+
+  /admin/categories/{categoryId}:
+    put:
+      operationId: adminUpdateCategory
+      tags: [admin]
+      summary: Update a category
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CategoryItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: adminDeleteCategory
+      tags: [admin]
+      summary: Delete a category
+      parameters:
+        - name: categoryId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/criteria:
+    get:
+      operationId: adminListCriteria
+      tags: [admin]
+      summary: List all criteria (admin, all statuses)
+      parameters:
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Criteria
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CriterionItem"
+    post:
+      operationId: adminCreateCriterion
+      tags: [admin]
+      summary: Create a criterion
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriterionInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CriterionItem"
+
+  /admin/criteria/{criterionId}:
+    put:
+      operationId: adminUpdateCriterion
+      tags: [admin]
+      summary: Update a criterion
+      parameters:
+        - name: criterionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CriterionInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CriterionItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: adminDeleteCriterion
+      tags: [admin]
+      summary: Delete a criterion
+      parameters:
+        - name: criterionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/products:
+    get:
+      operationId: adminListProducts
+      tags: [admin]
+      summary: List all products (admin, all statuses)
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: categoryId
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminProductItem"
+    post:
+      operationId: adminCreateProduct
+      tags: [admin]
+      summary: Create a product directly (admin)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminProductInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductItem"
+
+  /admin/products/{productId}:
+    put:
+      operationId: adminUpdateProduct
+      tags: [admin]
+      summary: Update a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminProductInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: adminDeleteProduct
+      tags: [admin]
+      summary: Delete a product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/products/{productId}/status:
+    patch:
+      operationId: adminUpdateProductStatus
+      tags: [admin]
+      summary: Approve or reject a pending product
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusUpdate"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminProductItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/criterion-suggestions:
+    get:
+      operationId: adminListCriterionSuggestions
+      tags: [admin]
+      summary: List criterion suggestions
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CriterionSuggestionItem"
+
+  /admin/criterion-suggestions/{suggestionId}/review:
+    patch:
+      operationId: adminReviewCriterionSuggestion
+      tags: [admin]
+      summary: Approve or reject a criterion suggestion
+      parameters:
+        - name: suggestionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuggestionReview"
+      responses:
+        "200":
+          description: Reviewed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CriterionSuggestionItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/product-suggestions:
+    get:
+      operationId: adminListProductSuggestions
+      tags: [admin]
+      summary: List product registration suggestions
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Suggestions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ProductSuggestionItem"
+
+  /admin/product-suggestions/{suggestionId}/review:
+    patch:
+      operationId: adminReviewProductSuggestion
+      tags: [admin]
+      summary: Approve or reject a product suggestion
+      parameters:
+        - name: suggestionId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SuggestionReview"
+      responses:
+        "200":
+          description: Reviewed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductSuggestionItem"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
 
+    SuccessResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+
+    CategoryItem:
+      type: object
+      required: [id, slug, name, icon, sortOrder]
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        sortOrder:
+          type: integer
+
+    CategoryInput:
+      type: object
+      required: [slug, name, icon]
+      properties:
+        slug:
+          type: string
+        name:
+          type: string
+        icon:
+          type: string
+        sortOrder:
+          type: integer
+
+    CriterionItem:
+      type: object
+      required: [id, categoryId, name, status, sortOrder]
+      properties:
+        id:
+          type: integer
+        categoryId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+        sortOrder:
+          type: integer
+
+    CriterionInput:
+      type: object
+      required: [categoryId, name]
+      properties:
+        categoryId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+        sortOrder:
+          type: integer
+
+    ProductRatingEntry:
+      type: object
+      required: [criterionId, score, count]
+      properties:
+        criterionId:
+          type: integer
+        score:
+          type: number
+        count:
+          type: integer
+
+    ProductWithRatings:
+      type: object
+      required: [id, categoryId, name, brand, modelNumber, price, status, reviewCount, images, ratings]
+      properties:
+        id:
+          type: integer
+        categoryId:
+          type: integer
+        name:
+          type: string
+        brand:
+          type: string
+        modelNumber:
+          type: string
+        janCode:
+          type: ["string", "null"]
+        price:
+          type: integer
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+        reviewCount:
+          type: integer
+        images:
+          type: array
+          items:
+            type: string
+        ratings:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProductRatingEntry"
+
+    AdminProductItem:
+      type: object
+      required: [id, categoryId, name, brand, modelNumber, price, status, reviewCount, images]
+      properties:
+        id:
+          type: integer
+        categoryId:
+          type: integer
+        name:
+          type: string
+        brand:
+          type: string
+        modelNumber:
+          type: string
+        janCode:
+          type: ["string", "null"]
+        price:
+          type: integer
+        description:
+          type: ["string", "null"]
+        status:
+          type: string
+        reviewCount:
+          type: integer
+        images:
+          type: array
+          items:
+            type: string
+        createdAt:
+          type: string
+
+    AdminProductInput:
+      type: object
+      required: [categoryId, name, brand]
+      properties:
+        categoryId:
+          type: integer
+        name:
+          type: string
+        brand:
+          type: string
+        modelNumber:
+          type: string
+        janCode:
+          type: string
+        price:
+          type: integer
+        description:
+          type: string
+        status:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+
+    RatingInput:
+      type: object
+      required: [scores]
+      properties:
+        scores:
+          type: object
+          additionalProperties:
+            type: integer
+
+    StatusUpdate:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+        adminNotes:
+          type: string
+
+    CriterionSuggestionInput:
+      type: object
+      required: [categoryId, name, description]
+      properties:
+        categoryId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        reason:
+          type: string
+
+    CriterionSuggestionItem:
+      type: object
+      required: [id, categoryId, name, description, status, createdAt]
+      properties:
+        id:
+          type: integer
+        categoryId:
+          type: integer
+        name:
+          type: string
+        description:
+          type: string
+        reason:
+          type: ["string", "null"]
+        status:
+          type: string
+        adminNotes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    ProductSuggestionInput:
+      type: object
+      required: [categoryId, brand, name]
+      properties:
+        categoryId:
+          type: integer
+        brand:
+          type: string
+        name:
+          type: string
+        modelNumber:
+          type: string
+        janCode:
+          type: string
+        price:
+          type: integer
+        description:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+
+    ProductSuggestionItem:
+      type: object
+      required: [id, categoryId, brand, name, status, createdAt]
+      properties:
+        id:
+          type: integer
+        categoryId:
+          type: integer
+        brand:
+          type: string
+        name:
+          type: string
+        modelNumber:
+          type: string
+        janCode:
+          type: ["string", "null"]
+        price:
+          type: ["integer", "null"]
+        description:
+          type: ["string", "null"]
+        images:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+        adminNotes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+
+    JanLookupResult:
+      type: object
+      required: [found]
+      properties:
+        found:
+          type: boolean
+        name:
+          type: string
+        brand:
+          type: string
+        description:
+          type: string
+        images:
+          type: array
+          items:
+            type: string
+        lowestPrice:
+          type: ["number", "null"]
+        highestPrice:
+          type: ["number", "null"]
+
+    AdminLoginInput:
+      type: object
+      required: [password]
+      properties:
+        password:
+          type: string
+
+    SuggestionReview:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+        adminNotes:
+          type: string

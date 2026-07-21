@@ -1,60 +1,64 @@
-import { getCriterionLabel } from '@/data/criteria';
-import type { MatchCriterion, MatchResult, Product } from '@/types/product';
+import type { ApiProduct, ApiCriterion, ApiRatingEntry } from '@/types/api';
 
-function roundToOneDecimal(value: number): number {
+export type MatchCriterion = {
+  id: number;
+  name: string;
+  score: number;
+  count: number;
+};
+
+export type MatchResult = {
+  percentage: number;
+  averageScore: number;
+  overallAverageScore: number;
+  reviewCount: number;
+  matchedCriteria: MatchCriterion[];
+  otherCriteria: MatchCriterion[];
+};
+
+function round1(value: number): number {
   return Math.round(value * 10) / 10;
 }
 
-function createCriterion(
-  product: Product,
-  criterionId: string,
-): MatchCriterion | null {
-  const rating = product.ratings[criterionId];
-  if (!rating) return null;
+function toMatchCriterion(entry: ApiRatingEntry, criteria: ApiCriterion[]): MatchCriterion {
+  const criterion = criteria.find((c) => c.id === entry.criterionId);
   return {
-    id: criterionId,
-    name: getCriterionLabel(criterionId),
-    score: rating.score,
-    count: rating.count,
+    id: entry.criterionId,
+    name: criterion?.name ?? `基準 ${entry.criterionId}`,
+    score: entry.score,
+    count: entry.count,
   };
 }
 
 export function calculateMatch(
-  product: Product,
-  selectedCriteria: string[],
+  product: ApiProduct,
+  criteria: ApiCriterion[],
+  selectedCriteriaIds: number[],
 ): MatchResult {
-  const validSelectedCriteria = Array.from(new Set(selectedCriteria)).filter(
-    (criterionId) => product.ratings[criterionId],
-  );
+  const selectedSet = new Set(selectedCriteriaIds);
 
-  const matchedCriteria = validSelectedCriteria
-    .map((criterionId) => createCriterion(product, criterionId))
-    .filter((c): c is MatchCriterion => c !== null);
-
-  const selectedSet = new Set(validSelectedCriteria);
-
-  const otherCriteria = Object.keys(product.ratings)
-    .filter((criterionId) => !selectedSet.has(criterionId))
-    .map((criterionId) => createCriterion(product, criterionId))
-    .filter((c): c is MatchCriterion => c !== null)
+  const matchedEntries = product.ratings.filter((r) => selectedSet.has(r.criterionId));
+  const otherEntries = product.ratings
+    .filter((r) => !selectedSet.has(r.criterionId))
     .sort((a, b) => b.score - a.score);
+
+  const matchedCriteria = matchedEntries.map((r) => toMatchCriterion(r, criteria));
+  const otherCriteria = otherEntries.map((r) => toMatchCriterion(r, criteria));
 
   const averageScore =
     matchedCriteria.length > 0
-      ? matchedCriteria.reduce((total, c) => total + c.score, 0) /
-        matchedCriteria.length
+      ? matchedCriteria.reduce((t, c) => t + c.score, 0) / matchedCriteria.length
       : 0;
 
-  const allRatings = Object.values(product.ratings);
   const overallAverageScore =
-    allRatings.length > 0
-      ? allRatings.reduce((total, r) => total + r.score, 0) / allRatings.length
+    product.ratings.length > 0
+      ? product.ratings.reduce((t, r) => t + r.score, 0) / product.ratings.length
       : 0;
 
   return {
     percentage: Math.round((averageScore / 5) * 100),
-    averageScore: roundToOneDecimal(averageScore),
-    overallAverageScore: roundToOneDecimal(overallAverageScore),
+    averageScore: round1(averageScore),
+    overallAverageScore: round1(overallAverageScore),
     reviewCount: product.reviewCount,
     matchedCriteria,
     otherCriteria,

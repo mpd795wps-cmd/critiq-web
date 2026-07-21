@@ -9,19 +9,33 @@ import GrowRating from '@/pages/grow/Rating';
 import GrowProduct from '@/pages/grow/ProductRegistration';
 import GrowCriterion from '@/pages/grow/CriterionSuggestion';
 import NotFound from '@/pages/NotFound';
+import AdminLogin from '@/pages/admin/AdminLogin';
+import AdminDashboard from '@/pages/admin/AdminDashboard';
+import AdminProducts from '@/pages/admin/AdminProducts';
+import AdminCriteria from '@/pages/admin/AdminCriteria';
+import AdminCategories from '@/pages/admin/AdminCategories';
+import AdminCriterionSuggestions from '@/pages/admin/AdminCriterionSuggestions';
+import AdminProductSuggestions from '@/pages/admin/AdminProductSuggestions';
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/explore" component={Explore} />
-      <Route path="/explore/:categoryId/results" component={Results} />
-      <Route path="/explore/:categoryId" component={Category} />
+      <Route path="/explore/:categorySlug/results" component={Results} />
+      <Route path="/explore/:categorySlug" component={Category} />
       <Route path="/grow" component={Grow} />
       <Route path="/grow/rating" component={GrowRating} />
       <Route path="/grow/product" component={GrowProduct} />
       <Route path="/grow/criterion" component={GrowCriterion} />
       <Route path="/product/:productId" component={ProductDetail} />
+      <Route path="/admin/login" component={AdminLogin} />
+      <Route path="/admin/products" component={AdminProducts} />
+      <Route path="/admin/criteria" component={AdminCriteria} />
+      <Route path="/admin/categories" component={AdminCategories} />
+      <Route path="/admin/suggestions/criteria" component={AdminCriterionSuggestions} />
+      <Route path="/admin/suggestions/products" component={AdminProductSuggestions} />
+      <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
   );
