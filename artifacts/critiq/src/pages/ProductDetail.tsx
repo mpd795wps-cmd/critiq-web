@@ -153,8 +153,19 @@ export default function ProductDetail() {
           </div>
         </div>
 
-        {/* ── Amazon ボタン ── */}
+        {/* ── この商品を評価する ── */}
         <div className="mt-4 px-5">
+          <Link
+            href={`/grow/rating?productId=${product.id}`}
+            className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-[#315c4c] px-5 py-4 font-bold text-[#315c4c] transition hover:bg-[#315c4c] hover:text-white"
+          >
+            <span aria-hidden="true">✎</span>
+            <span>この商品を評価する</span>
+          </Link>
+        </div>
+
+        {/* ── Amazon ボタン ── */}
+        <div className="mt-3 px-5">
           {amazonUrl ? (
             <a
               href={amazonUrl}
