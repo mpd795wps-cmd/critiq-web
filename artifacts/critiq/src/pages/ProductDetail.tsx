@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link, useParams } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import type { ApiCriterion } from '@/types/api';
 
 function StarRating({ score }: { score: number }) {
   const filled = Math.round(score);
@@ -15,11 +16,70 @@ function StarRating({ score }: { score: number }) {
   );
 }
 
+const HELPFUL_KEY = 'critiq_helpful';
+function getHelpedSet(): Set<number> {
+  try { return new Set(JSON.parse(localStorage.getItem(HELPFUL_KEY) ?? '[]')); } catch { return new Set(); }
+}
+function markHelped(id: number) {
+  const s = getHelpedSet(); s.add(id);
+  localStorage.setItem(HELPFUL_KEY, JSON.stringify([...s]));
+}
+
+function CriterionBadge({ criterion }: { criterion: ApiCriterion }) {
+  if (criterion.isOfficial) {
+    return <span className="rounded-full bg-[#e8f0eb] px-2 py-0.5 text-[10px] font-bold text-[#315c4c]">公式</span>;
+  }
+  if (criterion.createdByUsername) {
+    return <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">by {criterion.createdByUsername}</span>;
+  }
+  return null;
+}
+
+function HelpfulButton({ criterion, onHelped }: { criterion: ApiCriterion; onHelped: (id: number, count: number) => void }) {
+  const [helped, setHelped] = useState(() => getHelpedSet().has(criterion.id));
+  const [count, setCount] = useState(criterion.helpfulCount);
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick() {
+    if (helped || loading) return;
+    setLoading(true);
+    try {
+      const res = await api.criteria.helpful(criterion.id);
+      markHelped(criterion.id);
+      setHelped(true);
+      setCount(res.helpfulCount);
+      onHelped(criterion.id, res.helpfulCount);
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleClick}
+      disabled={helped || loading}
+      className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold transition ${
+        helped
+          ? 'bg-[#315c4c] text-white'
+          : 'border border-[#dce5df] text-[#68746e] hover:border-[#315c4c] hover:text-[#315c4c]'
+      }`}
+      title="参考になった"
+    >
+      <span>👍</span>
+      <span>{count}</span>
+    </button>
+  );
+}
+
 const RATINGS_LIMIT = 10;
 
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
   const id = parseInt(productId ?? '', 10);
+  const queryClient = useQueryClient();
 
   const { data: product, isLoading, error } = useQuery({
     queryKey: ['product', id],
@@ -28,7 +88,6 @@ export default function ProductDetail() {
     retry: false,
   });
 
-  // Fetch criteria for the product's category to display criterion names
   const { data: criteria = [] } = useQuery({
     queryKey: ['criteria', product?.categoryId],
     queryFn: () => api.criteria.list(product!.categoryId),
@@ -68,8 +127,15 @@ export default function ProductDetail() {
   const hasMore = product.ratings.length > RATINGS_LIMIT;
   const visibleRatings = showAllRatings ? product.ratings : product.ratings.slice(0, RATINGS_LIMIT);
 
-  function getCriterionName(criterionId: number): string {
-    return criteria.find((c) => c.id === criterionId)?.name ?? `基準 ${criterionId}`;
+  function getCriterion(criterionId: number): ApiCriterion | undefined {
+    return criteria.find((c) => c.id === criterionId);
+  }
+
+  function handleHelped(criterionId: number, newCount: number) {
+    // Update the cached criteria list so the count is reflected everywhere
+    queryClient.setQueryData<ApiCriterion[]>(['criteria', product!.categoryId], (prev) =>
+      prev?.map((c) => c.id === criterionId ? { ...c, helpfulCount: newCount } : c) ?? []
+    );
   }
 
   return (
@@ -85,9 +151,13 @@ export default function ProductDetail() {
           </Link>
         </div>
 
+        {/* Main image */}
         <div className="mt-5 px-5">
           <div className="overflow-hidden rounded-2xl bg-slate-100">
-            <img key={mainImage} src={mainImage} alt={`${product.name} メイン画像`} className="aspect-[4/3] w-full object-cover" />
+            {mainImage
+              ? <img key={mainImage} src={mainImage} alt={`${product.name} メイン画像`} className="aspect-[4/3] w-full object-cover" />
+              : <div className="flex aspect-[4/3] items-center justify-center text-4xl text-slate-300">📷</div>
+            }
           </div>
         </div>
 
@@ -108,6 +178,7 @@ export default function ProductDetail() {
           </div>
         )}
 
+        {/* Product info */}
         <div className="mt-6 px-5">
           <div className="rounded-2xl border border-[#dce5df] bg-white p-5">
             <p className="text-xs font-bold uppercase tracking-widest text-[#315c4c]">{product.brand}</p>
@@ -121,9 +192,16 @@ export default function ProductDetail() {
                 <span className="text-sm text-slate-500">（{product.reviewCount.toLocaleString('ja-JP')}件）</span>
               </div>
             )}
+            {/* Description */}
+            {product.description && (
+              <p className="mt-4 border-t border-slate-100 pt-4 text-sm leading-relaxed text-[#68746e]">
+                {product.description}
+              </p>
+            )}
           </div>
         </div>
 
+        {/* Rate CTA */}
         <div className="mt-4 px-5">
           <Link
             href={`/grow/rating?productId=${product.id}`}
@@ -134,20 +212,38 @@ export default function ProductDetail() {
           </Link>
         </div>
 
+        {/* Criterion ratings */}
         {product.ratings.length > 0 && (
           <div className="mt-4 px-5 pb-4">
             <div className="rounded-2xl border border-[#dce5df] bg-white p-5">
               <h2 className="text-sm font-bold text-slate-900">基準別評価</h2>
               <ul className="mt-3 divide-y divide-slate-100">
-                {visibleRatings.map((r) => (
-                  <li key={r.criterionId} className="flex items-center justify-between gap-3 py-2">
-                    <span className="text-sm font-medium text-slate-700">{getCriterionName(r.criterionId)}</span>
-                    <div className="flex items-center gap-2">
-                      <StarRating score={r.score} />
-                      <span className="text-xs text-slate-400">({r.count})</span>
-                    </div>
-                  </li>
-                ))}
+                {visibleRatings.map((r) => {
+                  const criterion = getCriterion(r.criterionId);
+                  return (
+                    <li key={r.criterionId} className="py-3">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-sm font-medium text-slate-700">
+                              {criterion?.name ?? `基準 ${r.criterionId}`}
+                            </span>
+                            {criterion && <CriterionBadge criterion={criterion} />}
+                          </div>
+                        </div>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <StarRating score={r.score} />
+                          <span className="text-xs text-slate-400">({r.count})</span>
+                        </div>
+                      </div>
+                      {criterion && (
+                        <div className="mt-1.5 flex items-center gap-2">
+                          <HelpfulButton criterion={criterion} onHelped={handleHelped} />
+                        </div>
+                      )}
+                    </li>
+                  );
+                })}
               </ul>
               {hasMore && (
                 <button

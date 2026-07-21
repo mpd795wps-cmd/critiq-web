@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { useUser } from '@/contexts/UserContext';
 import type { ApiCriterion, ApiProduct } from '@/types/api';
 
 function StarInput({ value, onChange }: { value: number; onChange: (n: number) => void }) {
@@ -28,7 +29,18 @@ const inputClass = 'w-full rounded-xl border border-[#dce5df] bg-white px-4 py-3
 const labelClass = 'block text-sm font-bold text-[#1f2a25]';
 const errorClass = 'mt-1 text-xs text-red-500';
 
+function CriterionBadge({ criterion }: { criterion: ApiCriterion }) {
+  if (criterion.isOfficial) {
+    return <span className="rounded-full bg-[#e8f0eb] px-2 py-0.5 text-[10px] font-bold text-[#315c4c]">公式</span>;
+  }
+  if (criterion.createdByUsername) {
+    return <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">by {criterion.createdByUsername}</span>;
+  }
+  return null;
+}
+
 export default function CriterionSuggestion() {
+  const { user } = useUser();
   const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => api.categories.list() });
 
   const [step, setStep] = useState<Step>('form');
@@ -36,8 +48,9 @@ export default function CriterionSuggestion() {
   const [errors, setErrors] = useState<Partial<FormState>>({});
   const [submitting, setSubmitting] = useState(false);
 
-  // Similar criteria check (from API for selected category)
   const categoryIdNum = form.categoryId ? parseInt(form.categoryId, 10) : 0;
+
+  // Fetch existing criteria for selected category
   const { data: existingCriteria = [] } = useQuery({
     queryKey: ['criteria', categoryIdNum],
     queryFn: () => api.criteria.list(categoryIdNum),
@@ -51,7 +64,7 @@ export default function CriterionSuggestion() {
       })
     : [];
 
-  // Products for selected category
+  // Products for selected category (for the rate step)
   const { data: categoryProducts = [] } = useQuery({
     queryKey: ['products', categoryIdNum],
     queryFn: () => api.products.list(categoryIdNum),
@@ -99,6 +112,7 @@ export default function CriterionSuggestion() {
         name: form.name.trim(),
         description: form.description.trim(),
         reason: form.reason.trim() || undefined,
+        submitterUsername: user?.username ?? undefined,
       });
       setNewCriterionName(form.name.trim());
       setStep('rate');
@@ -110,11 +124,6 @@ export default function CriterionSuggestion() {
   }
 
   async function handleRatingSubmit() {
-    if (selectedProductId && score > 0) {
-      try {
-        await api.products.submitRating(selectedProductId, { [0]: score }); // placeholder
-      } catch { /* ignore rating errors */ }
-    }
     setStep('done');
   }
 
@@ -230,8 +239,13 @@ export default function CriterionSuggestion() {
           <div className="mt-5 space-y-3 px-5">
             {similarCriteria.map((c) => (
               <div key={c.id} className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                <p className="font-bold text-[#1f2a25]">{c.name}</p>
-                {c.description && <p className="mt-1 text-xs leading-5 text-[#68746e]">{c.description}</p>}
+                <div className="flex items-start gap-2">
+                  <div className="flex-1">
+                    <p className="font-bold text-[#1f2a25]">{c.name}</p>
+                    {c.description && <p className="mt-1 text-xs leading-5 text-[#68746e]">{c.description}</p>}
+                  </div>
+                  <CriterionBadge criterion={c} />
+                </div>
               </div>
             ))}
           </div>
@@ -250,6 +264,7 @@ export default function CriterionSuggestion() {
     );
   }
 
+  // ── FORM step ────────────────────────────────────────────────
   return (
     <main className="min-h-screen bg-[#edf1ed] text-[#1f2a25]">
       <div className="mx-auto min-h-screen w-full max-w-[480px] bg-[#f8faf8] pb-12">
@@ -258,6 +273,9 @@ export default function CriterionSuggestion() {
           <p className="text-sm font-bold text-[#315c4c]">CRITIQ</p>
           <h1 className="mt-2 text-2xl font-bold">基準を提案する</h1>
           <p className="mt-2 text-sm leading-6 text-[#68746e]">新しい比較軸を提案できます。運営が確認して反映します。</p>
+          {user && (
+            <p className="mt-2 text-xs text-[#68746e]">提案者として「{user.username ?? user.email}」が表示されます。</p>
+          )}
         </div>
         <form onSubmit={handleFormSubmit} noValidate className="mt-6 space-y-5 px-5">
           <div>
@@ -268,6 +286,24 @@ export default function CriterionSuggestion() {
             </select>
             {errors.categoryId && <p className={errorClass}>{errors.categoryId}</p>}
           </div>
+
+          {/* Show existing criteria for selected category */}
+          {categoryIdNum > 0 && existingCriteria.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-[#315c4c] mb-2">このカテゴリの既存基準</p>
+              <div className="rounded-xl border border-[#dce5df] bg-white divide-y divide-[#f0f4f1]">
+                {existingCriteria.map((c) => (
+                  <div key={c.id} className="flex items-center gap-2 px-3 py-2">
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm text-[#1f2a25]">{c.name}</span>
+                    </div>
+                    <CriterionBadge criterion={c} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           <div>
             <label className={labelClass}>基準名 <span className="text-red-500">*</span></label>
             <input type="text" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="例: 結露しにくさ" className={`${inputClass} mt-2`} />

@@ -6,7 +6,7 @@ const router = Router();
 
 // POST /criterion-suggestions
 router.post("/criterion-suggestions", async (req, res): Promise<void> => {
-  const { categoryId, name, description, reason } = req.body as Record<string, unknown>;
+  const { categoryId, name, description, reason, submitterUsername } = req.body as Record<string, unknown>;
   if (typeof categoryId !== "number" || typeof name !== "string" || !name.trim() || typeof description !== "string" || !description.trim()) {
     res.status(400).json({ error: "categoryId, name, description は必須です" }); return;
   }
@@ -16,6 +16,7 @@ router.post("/criterion-suggestions", async (req, res): Promise<void> => {
   await db.insert(criterionSuggestionsTable).values({
     categoryId, name: name.trim(), description: description.trim(),
     reason: typeof reason === "string" ? reason.trim() || null : null,
+    submitterUsername: typeof submitterUsername === "string" && submitterUsername.trim() ? submitterUsername.trim() : null,
   });
   res.status(201).json({ ok: true });
 });

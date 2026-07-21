@@ -1,4 +1,4 @@
-import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
+import { pgTable, serial, text, integer, boolean, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 import { categoriesTable } from "./categories";
@@ -15,6 +15,11 @@ export const criteriaTable = pgTable("criteria", {
   description: text("description"),
   status: text("status").notNull().default("active").$type<CriteriaStatus>(),
   sortOrder: integer("sort_order").notNull().default(0),
+  // Creator info
+  isOfficial: boolean("is_official").notNull().default(true),
+  createdByUsername: text("created_by_username"), // denormalized for fast reads; null = official
+  // Engagement
+  helpfulCount: integer("helpful_count").notNull().default(0),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });

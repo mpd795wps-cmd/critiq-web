@@ -15,6 +15,9 @@ export type ApiCriterion = {
   description: string | null;
   status: string;
   sortOrder: number;
+  isOfficial: boolean;
+  createdByUsername: string | null;
+  helpfulCount: number;
 };
 
 export type ApiRatingEntry = {
@@ -59,6 +62,7 @@ export type CriterionSuggestionItem = {
   name: string;
   description: string;
   reason: string | null;
+  submitterUsername: string | null;
   status: string;
   adminNotes: string | null;
   createdAt: string;
@@ -77,4 +81,10 @@ export type ProductSuggestionItem = {
   status: string;
   adminNotes: string | null;
   createdAt: string;
+};
+
+export type UserInfo = {
+  id: number;
+  email: string;
+  username: string | null;
 };

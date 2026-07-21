@@ -1,12 +1,71 @@
+import { useState } from 'react';
 import { Link, useParams, useSearch } from 'wouter';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import { calculateMatch } from '@/lib/calculateMatch';
 import ProductCard from '@/components/ProductCard';
+import type { ApiCriterion } from '@/types/api';
+
+const HELPFUL_KEY = 'critiq_helpful';
+function getHelpedSet(): Set<number> {
+  try { return new Set(JSON.parse(localStorage.getItem(HELPFUL_KEY) ?? '[]')); } catch { return new Set(); }
+}
+function markHelped(id: number) {
+  const s = getHelpedSet(); s.add(id);
+  localStorage.setItem(HELPFUL_KEY, JSON.stringify([...s]));
+}
+
+function HelpfulChip({ criterion, onHelped }: { criterion: ApiCriterion; onHelped: (id: number, count: number) => void }) {
+  const [helped, setHelped] = useState(() => getHelpedSet().has(criterion.id));
+  const [count, setCount] = useState(criterion.helpfulCount);
+  const [loading, setLoading] = useState(false);
+
+  async function handleClick(e: React.MouseEvent) {
+    e.stopPropagation();
+    if (helped || loading) return;
+    setLoading(true);
+    try {
+      const res = await api.criteria.helpful(criterion.id);
+      markHelped(criterion.id);
+      setHelped(true);
+      setCount(res.helpfulCount);
+      onHelped(criterion.id, res.helpfulCount);
+    } catch {
+      // silent
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-slate-900 pl-3 pr-1 py-1.5 text-xs font-semibold text-white">
+      <span>{criterion.name}</span>
+      {criterion.isOfficial
+        ? <span className="ml-1 rounded-full bg-[#315c4c] px-1.5 py-0.5 text-[9px] font-bold">公式</span>
+        : criterion.createdByUsername
+          ? <span className="ml-1 rounded-full bg-slate-700 px-1.5 py-0.5 text-[9px]">by {criterion.createdByUsername}</span>
+          : null
+      }
+      <button
+        type="button"
+        onClick={handleClick}
+        disabled={helped || loading}
+        title={helped ? '参考になった済み' : '参考になった'}
+        className={`ml-1 flex items-center gap-0.5 rounded-full px-2 py-0.5 text-[10px] font-bold transition ${
+          helped ? 'bg-white text-slate-900' : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+        }`}
+      >
+        <span>👍</span>
+        <span>{count}</span>
+      </button>
+    </span>
+  );
+}
 
 export default function Results() {
   const { categorySlug } = useParams<{ categorySlug: string }>();
   const search = useSearch();
+  const queryClient = useQueryClient();
 
   const params = new URLSearchParams(search);
   const selectedCriteriaIds = Array.from(
@@ -37,9 +96,9 @@ export default function Results() {
     enabled: !!category,
   });
 
-  const selectedCriteriaNames = selectedCriteriaIds
-    .map((id) => criteria.find((c) => c.id === id)?.name)
-    .filter(Boolean) as string[];
+  const selectedCriteria = selectedCriteriaIds
+    .map((id) => criteria.find((c) => c.id === id))
+    .filter(Boolean) as ApiCriterion[];
 
   const matchedProducts = products
     .map((product) => ({
@@ -51,6 +110,12 @@ export default function Results() {
         b.match.percentage - a.match.percentage ||
         b.match.overallAverageScore - a.match.overallAverageScore,
     );
+
+  function handleHelped(criterionId: number, newCount: number) {
+    queryClient.setQueryData<ApiCriterion[]>(['criteria', category?.id], (prev) =>
+      prev?.map((c) => c.id === criterionId ? { ...c, helpfulCount: newCount } : c) ?? []
+    );
+  }
 
   return (
     <main className="min-h-screen bg-slate-50 pb-12">
@@ -81,14 +146,9 @@ export default function Results() {
         <section className="mt-6">
           <p className="text-sm font-bold text-slate-900">選択した基準</p>
           <div className="mt-3 flex flex-wrap gap-2">
-            {selectedCriteriaNames.length > 0 ? (
-              selectedCriteriaNames.map((name) => (
-                <span
-                  key={name}
-                  className="rounded-full bg-slate-900 px-3 py-2 text-xs font-semibold text-white"
-                >
-                  {name}
-                </span>
+            {selectedCriteria.length > 0 ? (
+              selectedCriteria.map((criterion) => (
+                <HelpfulChip key={criterion.id} criterion={criterion} onHelped={handleHelped} />
               ))
             ) : (
               <span className="text-sm text-slate-500">基準が選択されていません。</span>

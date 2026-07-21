@@ -32,6 +32,7 @@ router.get("/categories/:categoryId/criteria", async (req, res): Promise<void> =
   res.json(rows.map((c) => ({
     id: c.id, categoryId: c.categoryId, name: c.name,
     description: c.description, status: c.status, sortOrder: c.sortOrder,
+    isOfficial: c.isOfficial, createdByUsername: c.createdByUsername, helpfulCount: c.helpfulCount,
   })));
 });
 

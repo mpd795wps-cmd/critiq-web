@@ -1,4 +1,4 @@
-import type { ApiCategory, ApiCriterion, ApiProduct, AdminProductItem, CriterionSuggestionItem, ProductSuggestionItem } from '@/types/api';
+import type { ApiCategory, ApiCriterion, ApiProduct, AdminProductItem, CriterionSuggestionItem, ProductSuggestionItem, UserInfo } from '@/types/api';
 
 const BASE = '/api';
 
@@ -57,32 +57,38 @@ async function del(path: string): Promise<void> {
 
 // ── Public ─────────────────────────────────────────────────
 export const api = {
+  auth: {
+    me: () => get<{ ok: boolean; user: UserInfo }>('/auth/me'),
+    register: (data: { email: string; username?: string }) =>
+      post<{ ok: boolean; user: UserInfo }>('/auth/register', data),
+    login: (data: { email: string }) =>
+      post<{ ok: boolean; user: UserInfo }>('/auth/login', data),
+    logout: () => post<{ ok: boolean }>('/auth/logout'),
+  },
+
   categories: {
     list: () => get<ApiCategory[]>('/categories'),
   },
   criteria: {
     list: (categoryId: number) => get<ApiCriterion[]>(`/categories/${categoryId}/criteria`),
+    helpful: (id: number) => post<{ ok: boolean; helpfulCount: number }>(`/criteria/${id}/helpful`),
   },
   products: {
     list: (categoryId: number) => get<ApiProduct[]>(`/categories/${categoryId}/products`),
-    get: (productId: number) => get<ApiProduct>(`/products/${productId}`),
-    submitRating: (productId: number, scores: Record<number, number>) =>
-      post<{ ok: boolean }>(`/products/${productId}/ratings`, { scores }),
+    get: (id: number) => get<ApiProduct>(`/products/${id}`),
+    rate: (productId: number, data: { criterionId: number; score: number }) =>
+      post<{ ok: boolean }>(`/products/${productId}/ratings`, data),
   },
   suggestions: {
-    createCriterion: (data: {
-      categoryId: number; name: string; description: string; reason?: string;
-    }) => post<{ ok: boolean }>('/criterion-suggestions', data),
+    createCriterion: (data: { categoryId: number; name: string; description: string; reason?: string; submitterUsername?: string }) =>
+      post<{ ok: boolean }>('/criterion-suggestions', data),
     createProduct: (data: {
-      categoryId: number; brand: string; name: string; modelNumber?: string;
+      categoryId: number; brand: string; name: string; modelNumber: string;
       janCode?: string; price?: number; description?: string; images?: string[];
     }) => post<{ ok: boolean }>('/product-suggestions', data),
   },
-  jan: {
-    lookup: (code: string) => get<{ found: boolean; name?: string; brand?: string; description?: string; images?: string[]; lowestPrice?: number | null }>(`/jan/${code}`),
-  },
 
-  // ── Admin ────────────────────────────────────────────────
+  // ── Admin ───────────────────────────────────────────────
   admin: {
     login: (password: string) => post<{ ok: boolean }>('/admin/login', { password }),
     logout: () => post<{ ok: boolean }>('/admin/logout'),
@@ -127,15 +133,18 @@ export const api = {
     criterionSuggestions: {
       list: (status?: string) =>
         get<CriterionSuggestionItem[]>(`/admin/criterion-suggestions${status ? `?status=${status}` : ''}`),
-      review: (id: number, status: 'approved' | 'rejected', adminNotes?: string) =>
-        patch<CriterionSuggestionItem>(`/admin/criterion-suggestions/${id}/review`, { status, adminNotes }),
+      review: (id: number, data: { status: 'approved' | 'rejected'; adminNotes?: string; name?: string; description?: string }) =>
+        patch<CriterionSuggestionItem>(`/admin/criterion-suggestions/${id}/review`, data),
     },
 
     productSuggestions: {
       list: (status?: string) =>
         get<ProductSuggestionItem[]>(`/admin/product-suggestions${status ? `?status=${status}` : ''}`),
-      review: (id: number, status: 'approved' | 'rejected', adminNotes?: string) =>
-        patch<ProductSuggestionItem>(`/admin/product-suggestions/${id}/review`, { status, adminNotes }),
+      review: (id: number, data: {
+        status: 'approved' | 'rejected'; adminNotes?: string;
+        brand?: string; name?: string; modelNumber?: string;
+        janCode?: string; price?: number; description?: string; images?: string[];
+      }) => patch<ProductSuggestionItem>(`/admin/product-suggestions/${id}/review`, data),
     },
   },
 };

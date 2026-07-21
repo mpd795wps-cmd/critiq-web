@@ -15,6 +15,7 @@ export const criterionSuggestionsTable = pgTable("criterion_suggestions", {
   name: text("name").notNull(),
   description: text("description").notNull(),
   reason: text("reason"),
+  submitterUsername: text("submitter_username"), // username at time of submission
   status: text("status").notNull().default("pending").$type<SuggestionStatus>(),
   adminNotes: text("admin_notes"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

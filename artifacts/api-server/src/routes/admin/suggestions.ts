@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, criterionSuggestionsTable, productSuggestionsTable, criteriaTable, productsTable, productImagesTable } from "@workspace/db";
-import { eq, asc, desc } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 import { requireAdmin } from "../../lib/adminAuth";
 
 const router = Router();
@@ -14,17 +14,24 @@ router.get("/admin/criterion-suggestions", async (req, res): Promise<void> => {
   const rows = await q.orderBy(desc(criterionSuggestionsTable.createdAt));
   res.json(rows.map((r) => ({
     id: r.id, categoryId: r.categoryId, name: r.name, description: r.description,
-    reason: r.reason, status: r.status, adminNotes: r.adminNotes,
-    createdAt: r.createdAt.toISOString(),
+    reason: r.reason, submitterUsername: r.submitterUsername, status: r.status,
+    adminNotes: r.adminNotes, createdAt: r.createdAt.toISOString(),
   })));
 });
 
 // PATCH /admin/criterion-suggestions/:id/review
-// When approved, also create the actual criterion
+// Accepts optional overrides (name, description) so admin can edit before approving
 router.patch("/admin/criterion-suggestions/:id/review", async (req, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-  const { status, adminNotes } = req.body as { status?: string; adminNotes?: string };
+
+  const {
+    status,
+    adminNotes,
+    name: overrideName,
+    description: overrideDescription,
+  } = req.body as { status?: string; adminNotes?: string; name?: string; description?: string };
+
   if (!status || !["approved", "rejected"].includes(status)) {
     res.status(400).json({ error: "status は approved / rejected のいずれか" }); return;
   }
@@ -35,23 +42,25 @@ router.patch("/admin/criterion-suggestions/:id/review", async (req, res): Promis
   if (!suggestion) { res.status(404).json({ error: "Not found" }); return; }
 
   if (status === "approved") {
-    // Determine next sort_order for this category
     const existing = await db.select({ sortOrder: criteriaTable.sortOrder })
       .from(criteriaTable).where(eq(criteriaTable.categoryId, suggestion.categoryId))
       .orderBy(desc(criteriaTable.sortOrder)).limit(1);
     const nextOrder = existing.length > 0 ? existing[0].sortOrder + 1 : 0;
     await db.insert(criteriaTable).values({
       categoryId: suggestion.categoryId,
-      name: suggestion.name,
-      description: suggestion.description,
+      name: overrideName?.trim() || suggestion.name,
+      description: overrideDescription?.trim() || suggestion.description,
       status: "active",
       sortOrder: nextOrder,
+      isOfficial: false,
+      createdByUsername: suggestion.submitterUsername ?? null,
     });
   }
 
   res.json({
     id: suggestion.id, categoryId: suggestion.categoryId, name: suggestion.name,
     description: suggestion.description, reason: suggestion.reason,
+    submitterUsername: suggestion.submitterUsername,
     status: suggestion.status, adminNotes: suggestion.adminNotes,
     createdAt: suggestion.createdAt.toISOString(),
   });
@@ -72,10 +81,20 @@ router.get("/admin/product-suggestions", async (req, res): Promise<void> => {
 });
 
 // PATCH /admin/product-suggestions/:id/review
+// Accepts full editable fields so admin can modify before approving
 router.patch("/admin/product-suggestions/:id/review", async (req, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-  const { status, adminNotes } = req.body as { status?: string; adminNotes?: string };
+
+  const {
+    status, adminNotes,
+    brand, name, modelNumber, janCode, price, description, images,
+  } = req.body as {
+    status?: string; adminNotes?: string;
+    brand?: string; name?: string; modelNumber?: string;
+    janCode?: string; price?: number; description?: string; images?: string[];
+  };
+
   if (!status || !["approved", "rejected"].includes(status)) {
     res.status(400).json({ error: "status は approved / rejected のいずれか" }); return;
   }
@@ -86,20 +105,20 @@ router.patch("/admin/product-suggestions/:id/review", async (req, res): Promise<
   if (!suggestion) { res.status(404).json({ error: "Not found" }); return; }
 
   if (status === "approved") {
-    // Create the actual product from the suggestion
     const [product] = await db.insert(productsTable).values({
       categoryId: suggestion.categoryId,
-      brand: suggestion.brand,
-      name: suggestion.name,
-      modelNumber: suggestion.modelNumber,
-      janCode: suggestion.janCode,
-      price: suggestion.price ?? 0,
-      description: suggestion.description,
+      brand: brand?.trim() || suggestion.brand,
+      name: name?.trim() || suggestion.name,
+      modelNumber: modelNumber?.trim() ?? suggestion.modelNumber,
+      janCode: janCode ?? suggestion.janCode,
+      price: price ?? suggestion.price ?? 0,
+      description: description?.trim() ?? suggestion.description,
       status: "active",
     }).returning();
-    // Insert images
-    if (suggestion.images.length > 0) {
-      await Promise.all(suggestion.images.map((url, i) =>
+
+    const finalImages = images ?? suggestion.images;
+    if (finalImages.length > 0) {
+      await Promise.all(finalImages.map((url, i) =>
         db.insert(productImagesTable).values({ productId: product.id, url, sortOrder: i })
       ));
     }

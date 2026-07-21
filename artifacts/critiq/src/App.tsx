@@ -9,6 +9,8 @@ import GrowRating from '@/pages/grow/Rating';
 import GrowProduct from '@/pages/grow/ProductRegistration';
 import GrowCriterion from '@/pages/grow/CriterionSuggestion';
 import NotFound from '@/pages/NotFound';
+import Register from '@/pages/auth/Register';
+import Login from '@/pages/auth/Login';
 import AdminLogin from '@/pages/admin/AdminLogin';
 import AdminDashboard from '@/pages/admin/AdminDashboard';
 import AdminProducts from '@/pages/admin/AdminProducts';
@@ -29,6 +31,8 @@ function Router() {
       <Route path="/grow/product" component={GrowProduct} />
       <Route path="/grow/criterion" component={GrowCriterion} />
       <Route path="/product/:productId" component={ProductDetail} />
+      <Route path="/register" component={Register} />
+      <Route path="/login" component={Login} />
       <Route path="/admin/login" component={AdminLogin} />
       <Route path="/admin/products" component={AdminProducts} />
       <Route path="/admin/criteria" component={AdminCriteria} />
