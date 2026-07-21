@@ -56,21 +56,21 @@ export default function Home() {
 
           <Link
             href="/grow"
-            className="group block rounded-[24px] border border-[#d9e4db] bg-[#315c4c] p-6 text-white shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            className="group block rounded-[24px] border border-[#dce6df] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
           >
             <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/15 text-2xl">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#e5efe9] text-2xl">
                 🌱
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-2xl font-bold">育てる</h2>
-                  <span className="text-2xl text-white/70 transition group-hover:translate-x-1">
+                  <h2 className="text-2xl font-bold text-[#274b3e]">育てる</h2>
+                  <span className="text-2xl text-[#8ba095] transition group-hover:translate-x-1">
                     →
                   </span>
                 </div>
                 <p className="mt-2 font-medium">基準や評価をみんなに届ける</p>
-                <p className="mt-2 text-sm leading-6 text-white/75">
+                <p className="mt-2 text-sm leading-6 text-[#728078]">
                   持っている商品の評価や、商品の登録、基準の追加に参加します。
                 </p>
               </div>
@@ -80,7 +80,7 @@ export default function Home() {
           <div className="rounded-2xl border border-dashed border-[#cdd9d1] bg-[#f2f6f3] px-5 py-4">
             <p className="text-sm font-bold text-[#315c4c]">CRITIQとは</p>
             <p className="mt-1 text-sm leading-6 text-[#68746e]">
-              口コミの総合点ではなく、自分が重視する比較基準から商品を選べるサービスです。
+              商品を検索する際は、自分が重視したい基準から商品を探せます。また、自分が大切にしている独自の基準をユーザー自身が追加でき、その基準がほかのユーザーの商品選びにも役立ちます。
             </p>
           </div>
         </section>

@@ -1,8 +1,9 @@
 import { Link } from 'wouter';
 import { useUser } from '@/contexts/UserContext';
 
+
 export default function Grow() {
-  const { user, loading } = useUser();
+  const { user, loading, logout } = useUser();
 
   return (
     <main className="min-h-screen bg-[#edf1ed] text-[#1f2a25]">
@@ -14,7 +15,15 @@ export default function Grow() {
           <div className="flex items-center gap-2">
             {!loading && (
               user ? (
-                <span className="text-xs text-[#68746e]">{user.username ?? user.email}</span>
+                <>
+                  <span className="text-xs text-[#68746e]">{user.username ?? user.email}</span>
+                  <button
+                    onClick={logout}
+                    className="rounded-full border border-[#dce5df] px-3 py-1.5 text-xs font-bold text-[#68746e] transition hover:border-red-300 hover:text-red-500"
+                  >
+                    ログアウト
+                  </button>
+                </>
               ) : (
                 <Link href="/login" className="rounded-full border border-[#315c4c] px-3 py-1.5 text-xs font-bold text-[#315c4c] transition hover:bg-[#315c4c] hover:text-white">
                   ログイン
