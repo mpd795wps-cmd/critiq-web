@@ -78,6 +78,27 @@ export const api = {
     get: (id: number) => get<ApiProduct>(`/products/${id}`),
     rate: (productId: number, data: { criterionId: number; score: number }) =>
       post<{ ok: boolean }>(`/products/${productId}/ratings`, data),
+    submitRating: (productId: number, scores: Record<number, number>) =>
+      post<{ ok: boolean }>(`/products/${productId}/ratings`, {
+        scores: Object.fromEntries(Object.entries(scores).filter(([, v]) => (v as number) > 0)),
+      }),
+  },
+  upload: {
+    image: async (file: File): Promise<string> => {
+      const formData = new FormData();
+      formData.append('image', file);
+      const res = await fetch(`${BASE}/upload/image`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData,
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({ error: res.statusText })) as { error?: string };
+        throw new Error(err.error ?? `Upload failed: ${res.status}`);
+      }
+      const data = await res.json() as { url: string };
+      return data.url;
+    },
   },
   suggestions: {
     createCriterion: (data: { categoryId: number; name: string; description: string; reason?: string; submitterUsername?: string }) =>

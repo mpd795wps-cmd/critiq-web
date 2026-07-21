@@ -43,8 +43,16 @@ export default function CriteriaSelector({ categorySlug, criteria }: CriteriaSel
               }`}
             >
               <div className="flex items-start justify-between gap-4">
-                <div>
-                  <p className="font-bold text-[#1f2a25]">{criterion.name}</p>
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <p className="font-bold text-[#1f2a25]">{criterion.name}</p>
+                    {criterion.isOfficial
+                      ? <span className="rounded-full bg-[#e8f0eb] px-2 py-0.5 text-[10px] font-bold text-[#315c4c]">公式</span>
+                      : criterion.createdByUsername
+                        ? <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-500">by {criterion.createdByUsername}</span>
+                        : null
+                    }
+                  </div>
                   {criterion.description && (
                     <p className="mt-2 text-sm leading-6 text-[#68746e]">{criterion.description}</p>
                   )}

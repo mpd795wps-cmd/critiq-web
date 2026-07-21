@@ -29,6 +29,10 @@ export default function ProductRegistration() {
   const [janLoading, setJanLoading] = useState(false);
   const [janError, setJanError] = useState('');
   const [fetchedImages, setFetchedImages] = useState<string[]>([]);
+  const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+  const [urlInput, setUrlInput] = useState('');
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function set(key: keyof FormState, value: string) {
@@ -65,6 +69,35 @@ export default function ProductRegistration() {
     }, 600);
   }
 
+  async function handleFileUpload(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    setUploadingFile(true);
+    try {
+      const urls = await Promise.all(
+        Array.from(files).map((file) => api.upload.image(file))
+      );
+      setUploadedImages((prev) => [...prev, ...urls]);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'アップロードに失敗しました');
+    } finally {
+      setUploadingFile(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  function addUrlImage() {
+    const url = urlInput.trim();
+    if (!url) return;
+    try { new URL(url); } catch { alert('有効なURLを入力してください'); return; }
+    setUploadedImages((prev) => [...prev, url]);
+    setUrlInput('');
+  }
+
+  function removeImage(url: string, source: 'fetched' | 'uploaded') {
+    if (source === 'fetched') setFetchedImages((prev) => prev.filter((u) => u !== url));
+    else setUploadedImages((prev) => prev.filter((u) => u !== url));
+  }
+
   function validate() {
     const e: Partial<FormState> = {};
     if (!form.categoryId) e.categoryId = 'カテゴリを選択してください';
@@ -89,7 +122,7 @@ export default function ProductRegistration() {
         janCode: form.janCode || undefined,
         price: form.price ? parseInt(form.price.replace(/[^0-9]/g, ''), 10) : undefined,
         description: form.description || undefined,
-        images: fetchedImages,
+        images: [...fetchedImages, ...uploadedImages],
       });
       setDone(true);
     } catch (err) {
@@ -102,6 +135,8 @@ export default function ProductRegistration() {
   const inputClass = 'w-full rounded-xl border border-[#dce5df] bg-white px-4 py-3 text-sm outline-none focus:border-[#315c4c] transition';
   const errorClass = 'mt-1 text-xs text-red-500';
   const labelClass = 'block text-sm font-bold text-[#1f2a25]';
+
+  const allImages = [...fetchedImages, ...uploadedImages];
 
   const header = (
     <div className="flex items-center justify-between px-5 pt-8">
@@ -118,7 +153,10 @@ export default function ProductRegistration() {
           <h1 className="mt-6 text-2xl font-bold">登録申請を送信しました！</h1>
           <p className="mt-3 text-center text-sm leading-6 text-[#68746e]">商品情報を受け取りました。<br />運営の確認後に反映されます。</p>
           <div className="mt-8 w-full space-y-3">
-            <button type="button" onClick={() => { setForm({ categoryId: '', brand: '', name: '', modelNumber: '', price: '', janCode: '', description: '' }); setFetchedImages([]); setDone(false); }}
+            <button type="button" onClick={() => {
+              setForm({ categoryId: '', brand: '', name: '', modelNumber: '', price: '', janCode: '', description: '' });
+              setFetchedImages([]); setUploadedImages([]); setDone(false);
+            }}
               className="w-full rounded-2xl bg-[#315c4c] px-5 py-4 font-bold text-white transition hover:bg-[#284b3f]">
               別の商品を登録する
             </button>
@@ -141,6 +179,7 @@ export default function ProductRegistration() {
           <p className="mt-2 text-sm leading-6 text-[#68746e]">まだ登録されていない商品の情報を教えてください。</p>
         </div>
         <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-5 px-5">
+          {/* JAN code */}
           <div>
             <label className={labelClass}>JANコード <span className="text-slate-400 font-normal text-xs">（入力すると自動取得）</span></label>
             <div className="relative mt-2">
@@ -148,12 +187,9 @@ export default function ProductRegistration() {
               {janLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#315c4c] animate-pulse">取得中…</span>}
             </div>
             {janError && <p className={errorClass}>{janError}</p>}
-            {fetchedImages.length > 0 && (
-              <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
-                {fetchedImages.map((img, i) => <img key={i} src={img} alt="" className="h-16 w-16 shrink-0 rounded-xl object-cover border border-[#dce5df]" />)}
-              </div>
-            )}
           </div>
+
+          {/* Category */}
           <div>
             <label className={labelClass}>カテゴリ <span className="text-red-500">*</span></label>
             <select value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)} className={`${inputClass} mt-2 appearance-none`}>
@@ -162,30 +198,89 @@ export default function ProductRegistration() {
             </select>
             {errors.categoryId && <p className={errorClass}>{errors.categoryId}</p>}
           </div>
+
+          {/* Brand */}
           <div>
             <label className={labelClass}>メーカー名 <span className="text-red-500">*</span></label>
             <input type="text" value={form.brand} onChange={(e) => set('brand', e.target.value)} placeholder="例: FIELDOOR" className={`${inputClass} mt-2`} />
             {errors.brand && <p className={errorClass}>{errors.brand}</p>}
           </div>
+
+          {/* Name */}
           <div>
             <label className={labelClass}>商品名 <span className="text-red-500">*</span></label>
             <input type="text" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="例: ワンタッチテント 2人用" className={`${inputClass} mt-2`} />
             {errors.name && <p className={errorClass}>{errors.name}</p>}
           </div>
+
+          {/* Model number */}
           <div>
             <label className={labelClass}>型番 <span className="text-red-500">*</span></label>
             <input type="text" value={form.modelNumber} onChange={(e) => set('modelNumber', e.target.value)} placeholder="例: FD-T200" className={`${inputClass} mt-2`} />
             {errors.modelNumber && <p className={errorClass}>{errors.modelNumber}</p>}
           </div>
+
+          {/* Description */}
           <div>
             <label className={labelClass}>商品説明 <span className="text-slate-400 font-normal text-xs">（任意）</span></label>
             <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} placeholder="JANコードで自動取得、または手入力" className={`${inputClass} mt-2 resize-none`} />
           </div>
+
+          {/* Price */}
           <div>
             <label className={labelClass}>参考価格（円） <span className="text-red-500">*</span></label>
             <input type="number" min="0" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="例: 12800" className={`${inputClass} mt-2`} />
             {errors.price && <p className={errorClass}>{errors.price}</p>}
           </div>
+
+          {/* Images */}
+          <div>
+            <label className={labelClass}>商品画像 <span className="text-slate-400 font-normal text-xs">（任意・複数可）</span></label>
+
+            {/* Preview grid */}
+            {allImages.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {fetchedImages.map((img) => (
+                  <div key={img} className="relative h-20 w-20 shrink-0">
+                    <img src={img} alt="" className="h-full w-full rounded-xl object-cover border border-[#dce5df]" />
+                    <button type="button" onClick={() => removeImage(img, 'fetched')}
+                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow">✕</button>
+                  </div>
+                ))}
+                {uploadedImages.map((img) => (
+                  <div key={img} className="relative h-20 w-20 shrink-0">
+                    <img src={img} alt="" className="h-full w-full rounded-xl object-cover border border-[#dce5df]" />
+                    <button type="button" onClick={() => removeImage(img, 'uploaded')}
+                      className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow">✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* File upload */}
+            <div className="mt-2 flex items-center gap-2">
+              <button type="button" onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingFile}
+                className="flex items-center gap-1.5 rounded-xl border border-[#dce5df] bg-white px-3 py-2 text-sm font-semibold text-[#315c4c] transition hover:border-[#315c4c] disabled:opacity-60">
+                {uploadingFile ? <><span className="animate-spin">⏳</span> アップロード中…</> : <><span>📁</span> ファイルを選択</>}
+              </button>
+              <span className="text-xs text-slate-400">最大10MB / 枚</span>
+            </div>
+            <input ref={fileInputRef} type="file" accept="image/*" multiple className="hidden"
+              onChange={(e) => handleFileUpload(e.target.files)} />
+
+            {/* URL input */}
+            <div className="mt-2 flex gap-2">
+              <input type="url" value={urlInput} onChange={(e) => setUrlInput(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addUrlImage())}
+                placeholder="画像URLを入力（任意）" className={`${inputClass} flex-1`} />
+              <button type="button" onClick={addUrlImage}
+                className="shrink-0 rounded-xl border border-[#dce5df] bg-white px-3 py-2 text-sm font-semibold text-[#315c4c] transition hover:border-[#315c4c]">
+                追加
+              </button>
+            </div>
+          </div>
+
           <button type="submit" disabled={submitting} className="w-full rounded-2xl bg-[#315c4c] px-5 py-4 font-bold text-white transition hover:bg-[#284b3f] disabled:opacity-60">
             {submitting ? '送信中…' : '登録申請を送信する'}
           </button>
