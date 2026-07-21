@@ -7,7 +7,6 @@ type FormState = {
   brand: string;
   name: string;
   modelNumber: string;
-  asin: string;
   price: string;
 };
 
@@ -30,7 +29,6 @@ export default function ProductRegistration() {
     brand: '',
     name: '',
     modelNumber: '',
-    asin: '',
     price: '',
   });
   const [errors, setErrors] = useState<Partial<FormState>>({});
@@ -54,10 +52,7 @@ export default function ProductRegistration() {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validate();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-      return;
-    }
+    if (Object.keys(errs).length > 0) { setErrors(errs); return; }
     saveProduct(form);
     setDone(true);
   }
@@ -69,9 +64,7 @@ export default function ProductRegistration() {
 
   const header = (
     <div className="flex items-center justify-between px-5 pt-8">
-      <Link href="/grow" className="text-sm font-bold text-[#315c4c]">
-        ← 育てる
-      </Link>
+      <Link href="/grow" className="text-sm font-bold text-[#315c4c]">← 育てる</Link>
       <Link
         href="/explore"
         className="rounded-full border border-[#315c4c] px-3 py-1.5 text-xs font-bold text-[#315c4c] transition hover:bg-[#315c4c] hover:text-white"
@@ -88,16 +81,12 @@ export default function ProductRegistration() {
           <span className="text-6xl" aria-hidden="true">📦</span>
           <h1 className="mt-6 text-2xl font-bold">登録申請を送信しました！</h1>
           <p className="mt-3 text-center text-sm leading-6 text-[#68746e]">
-            商品情報を受け取りました。
-            <br />審査後に反映されます。
+            商品情報を受け取りました。<br />審査後に反映されます。
           </p>
           <div className="mt-8 w-full space-y-3">
             <button
               type="button"
-              onClick={() => {
-                setForm({ categoryId: '', brand: '', name: '', modelNumber: '', asin: '', price: '' });
-                setDone(false);
-              }}
+              onClick={() => { setForm({ categoryId: '', brand: '', name: '', modelNumber: '', price: '' }); setDone(false); }}
               className="w-full rounded-2xl bg-[#315c4c] px-5 py-4 font-bold text-white transition hover:bg-[#284b3f]"
             >
               別の商品を登録する
@@ -122,109 +111,49 @@ export default function ProductRegistration() {
         <div className="px-5 pt-7">
           <p className="text-sm font-bold text-[#315c4c]">CRITIQ</p>
           <h1 className="mt-2 text-2xl font-bold">商品を登録する</h1>
-          <p className="mt-2 text-sm leading-6 text-[#68746e]">
-            まだ登録されていない商品の情報を教えてください。
-          </p>
+          <p className="mt-2 text-sm leading-6 text-[#68746e]">まだ登録されていない商品の情報を教えてください。</p>
         </div>
 
         <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-5 px-5">
           {/* カテゴリ */}
           <div>
-            <label className={labelClass}>
-              カテゴリ <span className="text-red-500">*</span>
-            </label>
-            <select
-              value={form.categoryId}
-              onChange={(e) => set('categoryId', e.target.value)}
-              className={`${inputClass} mt-2 appearance-none`}
-            >
+            <label className={labelClass}>カテゴリ <span className="text-red-500">*</span></label>
+            <select value={form.categoryId} onChange={(e) => set('categoryId', e.target.value)} className={`${inputClass} mt-2 appearance-none`}>
               <option value="">選択してください</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
+              {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
             {errors.categoryId && <p className={errorClass}>{errors.categoryId}</p>}
           </div>
 
           {/* メーカー */}
           <div>
-            <label className={labelClass}>
-              メーカー名 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.brand}
-              onChange={(e) => set('brand', e.target.value)}
-              placeholder="例: FIELDOOR"
-              className={`${inputClass} mt-2`}
-            />
+            <label className={labelClass}>メーカー名 <span className="text-red-500">*</span></label>
+            <input type="text" value={form.brand} onChange={(e) => set('brand', e.target.value)} placeholder="例: FIELDOOR" className={`${inputClass} mt-2`} />
             {errors.brand && <p className={errorClass}>{errors.brand}</p>}
           </div>
 
           {/* 商品名 */}
           <div>
-            <label className={labelClass}>
-              商品名 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.name}
-              onChange={(e) => set('name', e.target.value)}
-              placeholder="例: ワンタッチテント 2人用"
-              className={`${inputClass} mt-2`}
-            />
+            <label className={labelClass}>商品名 <span className="text-red-500">*</span></label>
+            <input type="text" value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="例: ワンタッチテント 2人用" className={`${inputClass} mt-2`} />
             {errors.name && <p className={errorClass}>{errors.name}</p>}
           </div>
 
           {/* 型番 */}
           <div>
-            <label className={labelClass}>
-              型番 <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.modelNumber}
-              onChange={(e) => set('modelNumber', e.target.value)}
-              placeholder="例: FD-T200"
-              className={`${inputClass} mt-2`}
-            />
+            <label className={labelClass}>型番 <span className="text-red-500">*</span></label>
+            <input type="text" value={form.modelNumber} onChange={(e) => set('modelNumber', e.target.value)} placeholder="例: FD-T200" className={`${inputClass} mt-2`} />
             {errors.modelNumber && <p className={errorClass}>{errors.modelNumber}</p>}
-          </div>
-
-          {/* ASIN */}
-          <div>
-            <label className={labelClass}>
-              Amazon ASIN <span className="text-slate-400 font-normal text-xs">（任意）</span>
-            </label>
-            <input
-              type="text"
-              value={form.asin}
-              onChange={(e) => set('asin', e.target.value)}
-              placeholder="例: B08XXXXXXXXX"
-              className={`${inputClass} mt-2`}
-            />
           </div>
 
           {/* 価格 */}
           <div>
-            <label className={labelClass}>
-              参考価格（円） <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={form.price}
-              onChange={(e) => set('price', e.target.value)}
-              placeholder="例: 12800"
-              className={`${inputClass} mt-2`}
-            />
+            <label className={labelClass}>参考価格（円） <span className="text-red-500">*</span></label>
+            <input type="number" min="0" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="例: 12800" className={`${inputClass} mt-2`} />
             {errors.price && <p className={errorClass}>{errors.price}</p>}
           </div>
 
-          <button
-            type="submit"
-            className="w-full rounded-2xl bg-[#315c4c] px-5 py-4 font-bold text-white transition hover:bg-[#284b3f]"
-          >
+          <button type="submit" className="w-full rounded-2xl bg-[#315c4c] px-5 py-4 font-bold text-white transition hover:bg-[#284b3f]">
             登録申請を送信する
           </button>
         </form>
