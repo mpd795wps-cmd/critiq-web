@@ -44,8 +44,21 @@ function CriterionRow({
 }
 
 export default function ProductCard({ product, match }: ProductCardProps) {
+  const thumbnail = product.images?.[0];
   return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
+    <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      {/* サムネイル */}
+      {thumbnail && (
+        <div className="h-44 w-full overflow-hidden bg-slate-100">
+          <img
+            src={thumbnail}
+            alt={product.name}
+            className="h-full w-full object-cover"
+          />
+        </div>
+      )}
+
+      <div className="p-5">
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-medium text-slate-500">{product.brand}</p>
@@ -96,6 +109,7 @@ export default function ProductCard({ product, match }: ProductCardProps) {
       >
         商品詳細を見る
       </Link>
+      </div>{/* /p-5 */}
     </article>
   );
 }

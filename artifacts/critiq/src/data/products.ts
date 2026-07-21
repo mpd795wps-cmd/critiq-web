@@ -8,7 +8,7 @@ export const products: Product[] = [
     brand: 'CRITIQ Outdoor',
     price: 29800,
     modelNumber: 'CQ-EDT-100',
-    asin: '',
+    janCode: '',
     images: [
       'https://picsum.photos/seed/cq-tent1-main/800/600',
       'https://picsum.photos/seed/cq-tent1-sub1/800/600',
@@ -33,7 +33,7 @@ export const products: Product[] = [
     brand: 'FIELD BASE',
     price: 24800,
     modelNumber: 'FB-TL-200',
-    asin: '',
+    janCode: '',
     images: [
       'https://picsum.photos/seed/fb-tent2-main/800/600',
       'https://picsum.photos/seed/fb-tent2-sub1/800/600',
@@ -58,7 +58,7 @@ export const products: Product[] = [
     brand: 'NORTH GARDEN',
     price: 69800,
     modelNumber: 'NG-F2R-300',
-    asin: '',
+    janCode: '',
     images: [
       'https://picsum.photos/seed/ng-tent3-main/800/600',
       'https://picsum.photos/seed/ng-tent3-sub1/800/600',

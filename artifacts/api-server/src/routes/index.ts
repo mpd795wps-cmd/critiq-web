@@ -1,10 +1,10 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health";
-import amazonRouter from "./amazon";
+import janRouter from "./jan";
 
 const router: IRouter = Router();
 
 router.use(healthRouter);
-router.use(amazonRouter);
+router.use(janRouter);
 
 export default router;

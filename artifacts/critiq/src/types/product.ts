@@ -10,7 +10,7 @@ export type Product = {
   brand: string;
   price: number;
   modelNumber: string;
-  asin: string;
+  janCode?: string;
   /** index 0 = メイン画像、以降サブ画像 */
   images: string[];
   reviewCount: number;
