@@ -1,13 +1,13 @@
 import { Link, useParams } from 'wouter';
 import { categories } from '@/data/categories';
-import { criteriaByCategory } from '@/data/criteria';
+import { getAllCriteriaForCategory } from '@/data/criteria';
 import CriteriaSelector from '@/components/CriteriaSelector';
 
 export default function Category() {
   const { categoryId } = useParams<{ categoryId: string }>();
 
   const category = categories.find((item) => item.id === categoryId);
-  const criteria = criteriaByCategory[categoryId ?? ''];
+  const criteria = getAllCriteriaForCategory(categoryId ?? '');
 
   if (!category) {
     return (
@@ -55,12 +55,12 @@ export default function Category() {
         <section className="mt-8">
           <div className="mb-4 flex items-end justify-between">
             <h2 className="text-lg font-bold">あなたが重視する基準</h2>
-            {criteria && (
+            {criteria.length > 0 && (
               <span className="text-xs text-[#68746e]">複数選択できます</span>
             )}
           </div>
 
-          {criteria ? (
+          {criteria.length > 0 ? (
             <CriteriaSelector categoryId={categoryId ?? ''} criteria={criteria} />
           ) : (
             <div className="rounded-[1.5rem] border border-dashed border-[#dce5df] bg-white p-6 text-center">

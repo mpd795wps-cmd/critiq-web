@@ -43,7 +43,10 @@ export const criteriaLabels: Record<string, string> = Object.fromEntries(
 );
 
 export function getCriterionLabel(criterionId: string): string {
-  return criteriaLabels[criterionId] ?? criterionId;
+  if (criteriaLabels[criterionId]) return criteriaLabels[criterionId];
+  // fall back to user-added live criteria
+  const live = getLiveCriteria().find((c) => c.id === criterionId);
+  return live?.name ?? criterionId;
 }
 
 // ── Live (user-added) criteria ────────────────────────────────
