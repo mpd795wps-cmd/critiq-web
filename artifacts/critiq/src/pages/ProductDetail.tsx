@@ -173,8 +173,9 @@ export default function ProductDetail() {
       ? product.ratings.reduce((s, r) => s + r.score, 0) / product.ratings.length
       : 0;
 
-  const hasMore = product.ratings.length > RATINGS_LIMIT;
-  const visibleRatings = showAllRatings ? product.ratings : product.ratings.slice(0, RATINGS_LIMIT);
+  const sortedRatings = [...product.ratings].sort((a, b) => b.score - a.score);
+  const hasMore = sortedRatings.length > RATINGS_LIMIT;
+  const visibleRatings = showAllRatings ? sortedRatings : sortedRatings.slice(0, RATINGS_LIMIT);
 
   function getCriterion(criterionId: number): ApiCriterion | undefined {
     return criteria.find((c) => c.id === criterionId);

@@ -72,7 +72,7 @@ export default function ProductCard({ product, match }: ProductCardProps) {
 
         {match.matchedCriteria.length > 0 && (
           <section className="mt-5">
-            <h3 className="text-sm font-bold text-slate-900">評価されたポイント</h3>
+            <h3 className="text-sm font-bold text-slate-900">あなたが選んだ基準</h3>
             <ul className="mt-2 divide-y divide-slate-100">
               {match.matchedCriteria.map((c) => <CriterionRow key={c.id} criterion={c} selected />)}
             </ul>
