@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { db, productsTable, productImagesTable, productRatingsTable } from "@workspace/db";
-import { eq, asc, and } from "drizzle-orm";
+import { eq, asc, and, SQL } from "drizzle-orm";
 import { requireAdmin } from "../../lib/adminAuth";
 
 const router = Router();
@@ -22,11 +22,14 @@ async function buildProductDto(p: typeof productsTable.$inferSelect) {
 router.get("/admin/products", async (req, res): Promise<void> => {
   const { status, categoryId } = req.query;
   let q = db.select().from(productsTable).$dynamic();
-  if (status && typeof status === "string") q = q.where(eq(productsTable.status, status as "active" | "pending" | "rejected"));
+  const conditions: SQL[] = [];
+  if (status && typeof status === "string") conditions.push(eq(productsTable.status, status as "active" | "pending" | "rejected"));
   if (categoryId) {
     const cid = parseInt(String(categoryId), 10);
-    if (!isNaN(cid)) q = q.where(eq(productsTable.categoryId, cid));
+    if (!isNaN(cid)) conditions.push(eq(productsTable.categoryId, cid));
   }
+  if (conditions.length === 1) q = q.where(conditions[0]);
+  else if (conditions.length > 1) q = q.where(and(...conditions));
   const rows = await q.orderBy(asc(productsTable.createdAt));
   res.json(await Promise.all(rows.map(buildProductDto)));
 });

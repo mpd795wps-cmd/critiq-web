@@ -96,7 +96,7 @@ router.post("/products/fetch-url", async (req, res): Promise<void> => {
     });
 
     if (!response.ok) {
-      res.status(422).json({ error: `ページの取得に失敗しました (${response.status})` }); return;
+      res.status(422).json({ error: `ページの取得に失敗しました（サイト側エラー: ${response.status}）` }); return;
     }
 
     const contentType = response.headers.get("content-type") ?? "";
