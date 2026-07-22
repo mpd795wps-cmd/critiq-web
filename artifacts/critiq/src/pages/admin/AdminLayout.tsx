@@ -15,16 +15,33 @@ const NAV_ITEMS = [
 
 type Props = { children: ReactNode };
 
+const ADMIN_LAST_PATH_KEY = 'critiq_admin_last_path';
+
 export default function AdminLayout({ children }: Props) {
   const [location, navigate] = useLocation();
   const [checking, setChecking] = useState(true);
 
   useEffect(() => {
-    api.admin.me().catch(() => navigate('/admin/login')).finally(() => setChecking(false));
+    api.admin.me()
+      .then(() => {
+        // セッションが有効なら現在のパスを保存（Safari再ロード後の復帰用）
+        localStorage.setItem(ADMIN_LAST_PATH_KEY, location);
+      })
+      .catch(() => {
+        localStorage.removeItem(ADMIN_LAST_PATH_KEY);
+        navigate('/admin/login');
+      })
+      .finally(() => setChecking(false));
   }, [navigate]);
+
+  // パス変化時も保存を更新
+  useEffect(() => {
+    if (!checking) localStorage.setItem(ADMIN_LAST_PATH_KEY, location);
+  }, [location, checking]);
 
   async function handleLogout() {
     await api.admin.logout().catch(() => {});
+    localStorage.removeItem(ADMIN_LAST_PATH_KEY);
     navigate('/admin/login');
   }
 

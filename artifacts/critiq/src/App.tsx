@@ -1,4 +1,6 @@
-import { Route, Switch, Router as WouterRouter } from 'wouter';
+import { Route, Switch, Router as WouterRouter, useLocation } from 'wouter';
+import { useEffect } from 'react';
+import { api } from '@/lib/api';
 import Home from '@/pages/Home';
 import Explore from '@/pages/Explore';
 import Category from '@/pages/Category';
@@ -21,8 +23,29 @@ import AdminProductSuggestions from '@/pages/admin/AdminProductSuggestions';
 import AdminCategorySuggestions from '@/pages/admin/AdminCategorySuggestions';
 import AdminUsers from '@/pages/admin/AdminUsers';
 
+const ADMIN_LAST_PATH_KEY = 'critiq_admin_last_path';
+
+// Safariがバックグラウンドでリロードして / に戻った際に管理画面へ自動復帰
+function AdminSessionRestorer() {
+  const [location, navigate] = useLocation();
+
+  useEffect(() => {
+    if (location !== '/') return;
+    const savedPath = localStorage.getItem(ADMIN_LAST_PATH_KEY);
+    if (!savedPath || !savedPath.startsWith('/admin')) return;
+
+    api.admin.me()
+      .then(() => navigate(savedPath))
+      .catch(() => localStorage.removeItem(ADMIN_LAST_PATH_KEY));
+  }, []); // 初回マウント時のみ
+
+  return null;
+}
+
 function Router() {
   return (
+    <>
+    <AdminSessionRestorer />
     <Switch>
       <Route path="/" component={Home} />
       <Route path="/explore" component={Explore} />
@@ -46,6 +69,7 @@ function Router() {
       <Route path="/admin" component={AdminDashboard} />
       <Route component={NotFound} />
     </Switch>
+    </>
   );
 }
 
