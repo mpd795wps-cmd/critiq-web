@@ -16,6 +16,23 @@ function StarRating({ score }: { score: number }) {
   );
 }
 
+function ExpandableDescription({ description }: { description: string }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="mt-4 border-t border-slate-100 pt-4">
+      <p className={`text-sm leading-relaxed text-[#68746e] whitespace-pre-line ${expanded ? '' : 'line-clamp-5'}`}>
+        {description}
+      </p>
+      <button
+        onClick={() => setExpanded((v) => !v)}
+        className="mt-2 text-xs font-semibold text-[#315c4c] hover:underline"
+      >
+        {expanded ? '閉じる ▲' : 'もっと見る ▼'}
+      </button>
+    </div>
+  );
+}
+
 const HELPFUL_KEY = 'critiq_helpful';
 function getHelpedSet(): Set<number> {
   try { return new Set(JSON.parse(localStorage.getItem(HELPFUL_KEY) ?? '[]')); } catch { return new Set(); }
@@ -221,9 +238,7 @@ export default function ProductDetail() {
             )}
             {/* Description with line-break support */}
             {product.description && (
-              <p className="mt-4 border-t border-slate-100 pt-4 text-sm leading-relaxed text-[#68746e] whitespace-pre-line">
-                {product.description}
-              </p>
+              <ExpandableDescription description={product.description} />
             )}
           </div>
         </div>
