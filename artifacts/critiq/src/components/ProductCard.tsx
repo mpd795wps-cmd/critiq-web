@@ -26,7 +26,10 @@ function CriterionRow({ criterion, selected }: { criterion: MatchCriterion; sele
         {selected && <span className="font-bold text-emerald-600" aria-hidden="true">✔</span>}
         <span className="truncate text-sm font-medium text-slate-700">{criterion.name}</span>
       </div>
-      <StarRating score={criterion.score} />
+      {criterion.isUnrated
+        ? <span className="text-xs text-slate-400">未評価</span>
+        : <StarRating score={criterion.score} />
+      }
     </li>
   );
 }
