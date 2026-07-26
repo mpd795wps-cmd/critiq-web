@@ -29,8 +29,8 @@ router.post("/criterion-suggestions", optionalUser, async (req, res): Promise<vo
   res.status(201).json({ ok: true });
 });
 
-// POST /product-suggestions — requires login
-router.post("/product-suggestions", requireUser, async (req, res): Promise<void> => {
+// POST /product-suggestions — optional auth
+router.post("/product-suggestions", optionalUser, async (req, res): Promise<void> => {
   const { categoryId, brand, name, modelNumber, janCode, price, description, images, pendingRatings } = req.body as Record<string, unknown>;
   if (typeof categoryId !== "number" || typeof brand !== "string" || !brand.trim() || typeof name !== "string" || !name.trim()) {
     res.status(400).json({ error: "categoryId, brand, name は必須です" }); return;
@@ -38,7 +38,7 @@ router.post("/product-suggestions", requireUser, async (req, res): Promise<void>
   const [cat] = await db.select({ id: categoriesTable.id }).from(categoriesTable).where(eq(categoriesTable.id, categoryId));
   if (!cat) { res.status(400).json({ error: "カテゴリが存在しません" }); return; }
 
-  const user = (req as any).currentUser as UserPayload;
+  const user = (req as any).currentUser as UserPayload | undefined;
 
   // Serialize pendingRatings as JSON string if valid object
   let pendingRatingsStr: string | null = null;
@@ -57,8 +57,8 @@ router.post("/product-suggestions", requireUser, async (req, res): Promise<void>
     price: typeof price === "number" ? price : null,
     description: typeof description === "string" && description.trim() ? description.trim() : null,
     images: Array.isArray(images) ? images.filter((u): u is string => typeof u === "string") : [],
-    submitterUserId: user.userId,
-    submitterEmail: user.email,
+    submitterUserId: user?.userId ?? null,
+    submitterEmail: user?.email ?? null,
     pendingRatings: pendingRatingsStr,
   });
   res.status(201).json({ ok: true });
