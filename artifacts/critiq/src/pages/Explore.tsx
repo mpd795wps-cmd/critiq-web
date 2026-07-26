@@ -1,8 +1,13 @@
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 export default function Explore() {
+  usePageMeta(
+    'アウトドア用品をカテゴリから探す｜CRITIQ',
+    'テント・チェア・ライト・クーラーボックスなどのアウトドア用品を、あなたの基準で比較・検索。CRITIQでカテゴリから探してみよう。',
+  );
   const { data: categories = [], isLoading } = useQuery({
     queryKey: ['categories'],
     queryFn: () => api.categories.list(),

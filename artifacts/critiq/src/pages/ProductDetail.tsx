@@ -3,6 +3,7 @@ import { Link, useParams } from 'wouter';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { ApiCriterion } from '@/types/api';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 function StarRating({ score }: { score: number }) {
   const filled = Math.round(score);
@@ -144,6 +145,13 @@ export default function ProductDetail() {
     queryFn: () => api.criteria.list(product!.categoryId),
     enabled: !!product,
   });
+
+  usePageMeta(
+    product ? `${product.name}（${product.brand}）の比較・口コミ｜CRITIQ` : undefined,
+    product
+      ? `${product.name}の評価・比較をCRITIQで確認。あなたが大切にする基準に合った商品かチェックしよう。`
+      : undefined,
+  );
 
   const [mainIndex, setMainIndex] = useState(0);
   const [showAllRatings, setShowAllRatings] = useState(false);

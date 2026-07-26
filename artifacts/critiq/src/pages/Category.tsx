@@ -2,6 +2,7 @@ import { Link, useParams } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import CriteriaSelector from '@/components/CriteriaSelector';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 export default function Category() {
   const { categorySlug } = useParams<{ categorySlug: string }>();
@@ -12,6 +13,13 @@ export default function Category() {
   });
 
   const category = categories.find((c) => c.slug === categorySlug);
+
+  usePageMeta(
+    category ? `${category.name}の比較・選び方｜CRITIQ` : undefined,
+    category
+      ? `CRITIQで${category.name}を比較・検索。重さ・設営しやすさ・防水性など、あなたが大切にする基準から最適な${category.name}を見つけましょう。`
+      : undefined,
+  );
 
   const { data: criteria = [], isLoading: loadingCriteria } = useQuery({
     queryKey: ['criteria', category?.id],

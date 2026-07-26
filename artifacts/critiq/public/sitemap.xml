@@ -8,9 +8,37 @@
     <priority>1.0</priority>
   </url>
 
-  <!-- 探すページ -->
+  <!-- カテゴリ一覧 -->
   <url>
     <loc>https://critiq-web.replit.app/explore</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- テントカテゴリ -->
+  <url>
+    <loc>https://critiq-web.replit.app/explore/tent</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- チェアカテゴリ -->
+  <url>
+    <loc>https://critiq-web.replit.app/explore/chair</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- ライトカテゴリ -->
+  <url>
+    <loc>https://critiq-web.replit.app/explore/light</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- クーラーボックスカテゴリ -->
+  <url>
+    <loc>https://critiq-web.replit.app/explore/cooler</loc>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
