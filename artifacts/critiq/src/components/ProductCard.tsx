@@ -55,7 +55,7 @@ export default function ProductCard({ product, match }: ProductCardProps) {
           </div>
           <div className="shrink-0 rounded-2xl bg-emerald-50 px-4 py-3 text-center">
             <p className="text-xs font-semibold text-emerald-700">あなたとの一致率</p>
-            {match.percentage === 0 ? (
+            {!match.hasAnyRating ? (
               <p className="mt-1 text-sm font-bold text-emerald-400">評価なし</p>
             ) : (
               <p className="mt-1 text-3xl font-black text-emerald-700">

@@ -1,8 +1,55 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, Fragment } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from './AdminLayout';
 import { api } from '@/lib/api';
 import type { AdminProductItem } from '@/types/api';
+
+// ─── Ratings panel ─────────────────────────────────────────
+function RatingsPanel({ productId, productName }: { productId: number; productName: string }) {
+  const { data: ratings = [], isLoading } = useQuery({
+    queryKey: ['admin-product-ratings', productId],
+    queryFn: () => api.admin.products.ratings(productId),
+  });
+
+  function stars(score: number) {
+    const n = Math.round(score);
+    return '★'.repeat(n) + '☆'.repeat(5 - n);
+  }
+
+  return (
+    <tr>
+      <td colSpan={5} className="bg-[#f1f6f3] px-6 py-4">
+        <p className="mb-3 text-xs font-bold text-[#315c4c]">「{productName}」 — 基準別評価</p>
+        {isLoading ? (
+          <p className="text-xs text-[#68746e]">読み込み中…</p>
+        ) : ratings.length === 0 ? (
+          <p className="text-xs text-[#68746e]">まだ評価がありません。</p>
+        ) : (
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs font-bold text-[#68746e]">
+                <th className="pb-2 pr-4">基準名</th>
+                <th className="pb-2 pr-4">平均スコア</th>
+                <th className="pb-2 pr-4">点数</th>
+                <th className="pb-2">件数</th>
+              </tr>
+            </thead>
+            <tbody>
+              {ratings.map((r) => (
+                <tr key={r.criterionId} className="border-t border-[#dce5df]">
+                  <td className="py-1.5 pr-4 font-medium text-[#1f2a25]">{r.criterionName ?? `基準 ${r.criterionId}`}</td>
+                  <td className="py-1.5 pr-4 font-mono text-amber-500">{stars(r.score)}</td>
+                  <td className="py-1.5 pr-4 font-bold text-[#315c4c]">{Math.round(r.score * 20)}点</td>
+                  <td className="py-1.5 text-[#68746e]">{r.count}件</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </td>
+    </tr>
+  );
+}
 
 // ─── Constants ────────────────────────────────────────────
 const STATUS_LABELS: Record<string, string> = { active: '公開中', pending: '保留中', rejected: '却下' };
@@ -266,6 +313,9 @@ export default function AdminProducts() {
     }),
   });
 
+  // Ratings panel state
+  const [ratingsProductId, setRatingsProductId] = useState<number | null>(null);
+
   // Form state
   const [mode, setMode] = useState<'none' | 'add' | 'edit'>('none');
   const [editTarget, setEditTarget] = useState<AdminProductItem | null>(null);
@@ -402,63 +452,76 @@ export default function AdminProducts() {
               </tr>
             </thead>
             <tbody>
-              {products.map((p, i) => (
-                <tr
-                  key={p.id}
-                  className={`border-b border-[#dce5df] transition hover:bg-[#f8faf8] ${
-                    editTarget?.id === p.id ? 'bg-[#f1f6f3]' : ''
-                  } ${i === products.length - 1 ? 'border-b-0' : ''}`}
-                >
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      {p.images[0] ? (
-                        <img src={p.images[0]} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
-                      ) : (
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f1f6f3] text-lg">📦</div>
-                      )}
-                      <div>
-                        <p className="font-bold text-[#1f2a25]">{p.name}</p>
-                        <p className="text-xs text-[#68746e]">{p.brand}{p.modelNumber ? ` · ${p.modelNumber}` : ''}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="hidden px-4 py-3 text-[#68746e] sm:table-cell">
-                    {categories.find((c) => c.id === p.categoryId)?.name ?? '-'}
-                  </td>
-                  <td className="hidden px-4 py-3 text-[#1f2a25] md:table-cell">
-                    ¥{p.price.toLocaleString()}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${STATUS_COLORS[p.status] ?? 'bg-slate-100 text-slate-500'}`}>
-                      {STATUS_LABELS[p.status] ?? p.status}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      <button onClick={() => openEdit(p)}
-                        className="rounded-lg bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600 transition hover:bg-slate-100">
-                        編集
-                      </button>
-                      {p.status !== 'active' && (
-                        <button onClick={() => handleStatusChange(p, 'active')}
-                          className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100">
-                          公開
-                        </button>
-                      )}
-                      {p.status === 'active' && (
-                        <button onClick={() => handleStatusChange(p, 'pending')}
-                          className="rounded-lg bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700 transition hover:bg-amber-100">
-                          保留
-                        </button>
-                      )}
-                      <button onClick={() => handleDelete(p)}
-                        className="rounded-lg bg-red-50 px-2 py-1 text-xs font-bold text-red-600 transition hover:bg-red-100">
-                        削除
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {products.map((p, i) => {
+                const ratingsOpen = ratingsProductId === p.id;
+                const isLast = i === products.length - 1;
+                return (
+                  <Fragment key={p.id}>
+                    <tr
+                      className={`border-b border-[#dce5df] transition hover:bg-[#f8faf8] ${
+                        editTarget?.id === p.id ? 'bg-[#f1f6f3]' : ''
+                      } ${isLast && !ratingsOpen ? 'border-b-0' : ''}`}
+                    >
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          {p.images[0] ? (
+                            <img src={p.images[0]} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
+                          ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f1f6f3] text-lg">📦</div>
+                          )}
+                          <div>
+                            <p className="font-bold text-[#1f2a25]">{p.name}</p>
+                            <p className="text-xs text-[#68746e]">{p.brand}{p.modelNumber ? ` · ${p.modelNumber}` : ''}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="hidden px-4 py-3 text-[#68746e] sm:table-cell">
+                        {categories.find((c) => c.id === p.categoryId)?.name ?? '-'}
+                      </td>
+                      <td className="hidden px-4 py-3 text-[#1f2a25] md:table-cell">
+                        ¥{p.price.toLocaleString()}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-bold ${STATUS_COLORS[p.status] ?? 'bg-slate-100 text-slate-500'}`}>
+                          {STATUS_LABELS[p.status] ?? p.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <button
+                            onClick={() => setRatingsProductId(ratingsOpen ? null : p.id)}
+                            className={`rounded-lg px-2 py-1 text-xs font-bold transition ${ratingsOpen ? 'bg-[#315c4c] text-white' : 'bg-[#e8f0eb] text-[#315c4c] hover:bg-[#d5e5da]'}`}>
+                            評価 {p.reviewCount > 0 ? `(${p.reviewCount})` : ''}▾
+                          </button>
+                          <button onClick={() => openEdit(p)}
+                            className="rounded-lg bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600 transition hover:bg-slate-100">
+                            編集
+                          </button>
+                          {p.status !== 'active' && (
+                            <button onClick={() => handleStatusChange(p, 'active')}
+                              className="rounded-lg bg-emerald-50 px-2 py-1 text-xs font-bold text-emerald-700 transition hover:bg-emerald-100">
+                              公開
+                            </button>
+                          )}
+                          {p.status === 'active' && (
+                            <button onClick={() => handleStatusChange(p, 'pending')}
+                              className="rounded-lg bg-amber-50 px-2 py-1 text-xs font-bold text-amber-700 transition hover:bg-amber-100">
+                              保留
+                            </button>
+                          )}
+                          <button onClick={() => handleDelete(p)}
+                            className="rounded-lg bg-red-50 px-2 py-1 text-xs font-bold text-red-600 transition hover:bg-red-100">
+                            削除
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {ratingsOpen && (
+                      <RatingsPanel productId={p.id} productName={p.name} />
+                    )}
+                  </Fragment>
+                );
+              })}
             </tbody>
           </table>
         )}

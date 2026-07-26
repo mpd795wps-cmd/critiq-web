@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { db, productsTable, productImagesTable, productRatingsTable } from "@workspace/db";
-import { eq, asc, and, SQL } from "drizzle-orm";
+import { db, productsTable, productImagesTable, productRatingsTable, criteriaTable } from "@workspace/db";
+import { eq, asc, desc, and, SQL } from "drizzle-orm";
 import { requireAdmin } from "../../lib/adminAuth";
 
 const router = Router();
@@ -99,6 +99,24 @@ router.delete("/admin/products/:id", async (req, res): Promise<void> => {
   const [row] = await db.delete(productsTable).where(eq(productsTable.id, id)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
   res.sendStatus(204);
+});
+
+// GET /admin/products/:id/ratings — 基準別評価一覧
+router.get("/admin/products/:id/ratings", async (req, res): Promise<void> => {
+  const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  const rows = await db
+    .select({
+      criterionId: productRatingsTable.criterionId,
+      criterionName: criteriaTable.name,
+      score: productRatingsTable.score,
+      count: productRatingsTable.count,
+    })
+    .from(productRatingsTable)
+    .leftJoin(criteriaTable, eq(productRatingsTable.criterionId, criteriaTable.id))
+    .where(eq(productRatingsTable.productId, id))
+    .orderBy(desc(productRatingsTable.score));
+  res.json(rows);
 });
 
 export default router;

@@ -173,6 +173,10 @@ export const api = {
       updateStatus: (id: number, status: string, adminNotes?: string) =>
         patch<AdminProductItem>(`/admin/products/${id}/status`, { status, adminNotes }),
       delete: (id: number) => del(`/admin/products/${id}`),
+      ratings: (id: number) =>
+        get<{ criterionId: number; criterionName: string | null; score: number; count: number }[]>(
+          `/admin/products/${id}/ratings`,
+        ),
     },
 
     criterionSuggestions: {
