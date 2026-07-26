@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+
+  <!-- トップページ -->
+  <url>
+    <loc>https://critiq-web.replit.app/</loc>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+  </url>
+
+  <!-- 探すページ -->
+  <url>
+    <loc>https://critiq-web.replit.app/explore</loc>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+
+  <!-- 育てるページ -->
+  <url>
+    <loc>https://critiq-web.replit.app/grow</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- 商品を評価する -->
+  <url>
+    <loc>https://critiq-web.replit.app/grow/rating</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- 商品を登録する -->
+  <url>
+    <loc>https://critiq-web.replit.app/grow/product</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.6</priority>
+  </url>
+
+  <!-- 基準を提案する -->
+  <url>
+    <loc>https://critiq-web.replit.app/grow/criterion</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.5</priority>
+  </url>
+
+</urlset>
