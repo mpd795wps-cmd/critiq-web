@@ -56,7 +56,21 @@ router.get("/products/:productId/comments", async (req, res): Promise<void> => {
   res.json(comments);
 });
 
-// POST /products/:productId/ratings — IP dedup per criterion
+// GET /products/:productId/my-rating — return this IP's previous votes
+router.get("/products/:productId/my-rating", async (req, res): Promise<void> => {
+  const id = parseInt(Array.isArray(req.params.productId) ? req.params.productId[0] : req.params.productId, 10);
+  if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
+  const ip = getIp(req);
+  const votes = await db
+    .select({ criterionId: ratingVotesTable.criterionId, score: ratingVotesTable.score })
+    .from(ratingVotesTable)
+    .where(and(eq(ratingVotesTable.productId, id), eq(ratingVotesTable.ipAddress, ip)));
+  const ratings: Record<number, number> = {};
+  for (const v of votes) ratings[v.criterionId] = v.score;
+  res.json({ ratings });
+});
+
+// POST /products/:productId/ratings — IP dedup per criterion (overwrite allowed)
 router.post("/products/:productId/ratings", async (req, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.productId) ? req.params.productId[0] : req.params.productId, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
@@ -85,9 +99,20 @@ router.post("/products/:productId/ratings", async (req, res): Promise<void> => {
       );
 
     if (existingVote) {
-      // Already voted for this criterion — skip
-      skipped.push(criterionId);
-      continue;
+      const oldScore = existingVote.score;
+      if (oldScore === newScore) { skipped.push(criterionId); continue; }
+      // Overwrite: update vote record
+      await db.update(ratingVotesTable).set({ score: newScore }).where(eq(ratingVotesTable.id, existingVote.id));
+      // Recalculate aggregate (count stays the same)
+      const [agg] = await db.select().from(productRatingsTable)
+        .where(and(eq(productRatingsTable.productId, id), eq(productRatingsTable.criterionId, criterionId)));
+      if (agg) {
+        const newAvg = (parseFloat(String(agg.score)) * agg.count - oldScore + newScore) / agg.count;
+        await db.update(productRatingsTable)
+          .set({ score: String(newAvg.toFixed(2)) })
+          .where(and(eq(productRatingsTable.productId, id), eq(productRatingsTable.criterionId, criterionId)));
+      }
+      continue; // counted as accepted (not skipped)
     }
 
     // Insert vote record

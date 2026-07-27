@@ -93,6 +93,8 @@ export const api = {
       }),
     comments: (productId: number) =>
       get<{ id: number; criterionId: number; comment: string; createdAt: string }[]>(`/products/${productId}/comments`),
+    myRating: (productId: number) =>
+      get<{ ratings: Record<string, number> }>(`/products/${productId}/my-rating`),
   },
   upload: {
     image: async (file: File): Promise<string> => {
