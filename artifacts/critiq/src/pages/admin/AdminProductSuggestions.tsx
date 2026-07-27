@@ -13,6 +13,7 @@ type EditState = {
   janCode: string;
   price: string;
   description: string;
+  referenceUrl: string;
 };
 
 function buildEditState(s: ProductSuggestionItem): EditState {
@@ -23,6 +24,7 @@ function buildEditState(s: ProductSuggestionItem): EditState {
     janCode: s.janCode ?? '',
     price: s.price != null ? String(s.price) : '',
     description: s.description ?? '',
+    referenceUrl: s.referenceUrl ?? '',
   };
 }
 
@@ -116,6 +118,12 @@ export default function AdminProductSuggestions() {
                   <p className="text-xs text-slate-400">{s.modelNumber}</p>
                   {s.janCode && <p className="mt-0.5 font-mono text-xs text-slate-400">JAN: {s.janCode}</p>}
                   {s.price != null && <p className="text-xs text-[#68746e]">¥{s.price.toLocaleString('ja-JP')}</p>}
+                  {s.referenceUrl && (
+                    <a href={s.referenceUrl} target="_blank" rel="noopener noreferrer"
+                      className="mt-0.5 block truncate text-xs text-[#315c4c] underline underline-offset-2 hover:text-[#284b3f]">
+                      {s.referenceUrl}
+                    </a>
+                  )}
                   <p className="mt-1 text-xs text-[#68746e]">カテゴリID: {s.categoryId}</p>
                   <p className="mt-0.5 text-[11px] text-slate-400">{new Date(s.createdAt).toLocaleDateString('ja-JP')}</p>
                 </div>
@@ -171,6 +179,10 @@ export default function AdminProductSuggestions() {
                       <label className="block text-[11px] font-bold text-[#68746e] mb-1">説明</label>
                       <textarea value={editState?.description ?? ''} onChange={(e) => setEdit('description', e.target.value)}
                         rows={2} className={inputClass} />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-[#68746e] mb-1">参考ページURL</label>
+                      <input value={editState?.referenceUrl ?? ''} onChange={(e) => setEdit('referenceUrl', e.target.value)} className={inputClass} />
                     </div>
                     <div>
                       <label className="block text-[11px] font-bold text-[#68746e] mb-1">管理メモ（任意）</label>

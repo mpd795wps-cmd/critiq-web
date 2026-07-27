@@ -79,6 +79,7 @@ export type ProductSuggestionItem = {
   janCode: string | null;
   price: number | null;
   description: string | null;
+  referenceUrl: string | null;
   images: string[];
   status: string;
   submitterEmail?: string | null;

@@ -31,9 +31,9 @@ router.post("/criterion-suggestions", optionalUser, async (req, res): Promise<vo
 
 // POST /product-suggestions — optional auth
 router.post("/product-suggestions", optionalUser, async (req, res): Promise<void> => {
-  const { categoryId, brand, name, modelNumber, janCode, price, description, images, pendingRatings } = req.body as Record<string, unknown>;
-  if (typeof categoryId !== "number" || typeof brand !== "string" || !brand.trim() || typeof name !== "string" || !name.trim()) {
-    res.status(400).json({ error: "categoryId, brand, name は必須です" }); return;
+  const { categoryId, brand, name, modelNumber, janCode, price, description, images, referenceUrl, pendingRatings } = req.body as Record<string, unknown>;
+  if (typeof categoryId !== "number" || typeof name !== "string" || !name.trim()) {
+    res.status(400).json({ error: "categoryId, name は必須です" }); return;
   }
   const [cat] = await db.select({ id: categoriesTable.id }).from(categoriesTable).where(eq(categoriesTable.id, categoryId));
   if (!cat) { res.status(400).json({ error: "カテゴリが存在しません" }); return; }
@@ -50,13 +50,14 @@ router.post("/product-suggestions", optionalUser, async (req, res): Promise<void
 
   await db.insert(productSuggestionsTable).values({
     categoryId,
-    brand: brand.trim(),
+    brand: typeof brand === "string" ? brand.trim() : "",
     name: (name as string).trim(),
     modelNumber: typeof modelNumber === "string" ? modelNumber.trim() : "",
     janCode: typeof janCode === "string" && janCode.trim() ? janCode.trim() : null,
     price: typeof price === "number" ? price : null,
     description: typeof description === "string" && description.trim() ? description.trim() : null,
     images: Array.isArray(images) ? images.filter((u): u is string => typeof u === "string") : [],
+    referenceUrl: typeof referenceUrl === "string" && referenceUrl.trim() ? referenceUrl.trim() : null,
     submitterUserId: user?.userId ?? null,
     submitterEmail: user?.email ?? null,
     pendingRatings: pendingRatingsStr,

@@ -49,6 +49,7 @@ export const productSuggestionsTable = pgTable("product_suggestions", {
   images: text("images").array().notNull().default([]),
   submitterUserId: integer("submitter_user_id").references(() => usersTable.id, { onDelete: "set null" }),
   submitterEmail: text("submitter_email"),
+  referenceUrl: text("reference_url"),
   // JSON string: Record<criterionId, score> — ratings to apply when approved
   pendingRatings: text("pending_ratings"),
   status: text("status").notNull().default("pending").$type<SuggestionStatus>(),

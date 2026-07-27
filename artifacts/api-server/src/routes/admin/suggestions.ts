@@ -105,7 +105,7 @@ router.get("/admin/product-suggestions", async (req, res): Promise<void> => {
   res.json(rows.map((r) => ({
     id: r.id, categoryId: r.categoryId, brand: r.brand, name: r.name,
     modelNumber: r.modelNumber, janCode: r.janCode, price: r.price,
-    description: r.description, images: r.images, status: r.status,
+    description: r.description, referenceUrl: r.referenceUrl, images: r.images, status: r.status,
     submitterEmail: r.submitterEmail,
     hasPendingRatings: !!r.pendingRatings,
     adminNotes: r.adminNotes, createdAt: r.createdAt.toISOString(),

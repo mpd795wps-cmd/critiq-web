@@ -115,9 +115,9 @@ export const api = {
     createCriterion: (data: { categoryId: number; name: string; description: string; reason?: string; submitterUsername?: string }) =>
       post<{ ok: boolean }>('/criterion-suggestions', data),
     createProduct: (data: {
-      categoryId: number; brand: string; name: string; modelNumber: string;
+      categoryId: number; brand?: string; name: string; modelNumber?: string;
       janCode?: string; price?: number; description?: string; images?: string[];
-      pendingRatings?: Record<number, number>;
+      referenceUrl?: string; pendingRatings?: Record<number, number>;
     }) => post<{ ok: boolean }>('/product-suggestions', data),
     createCategory: (data: { name: string; description?: string }) =>
       post<{ ok: boolean }>('/category-suggestions', data),

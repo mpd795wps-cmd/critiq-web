@@ -6,6 +6,7 @@ import { useUser } from '@/contexts/UserContext';
 
 type FormState = {
   categoryId: string;
+  referenceUrl: string;
   brand: string;
   name: string;
   modelNumber: string;
@@ -126,7 +127,7 @@ export default function ProductRegistration() {
     queryFn: () => api.categories.list(),
   });
 
-  const [form, setForm] = useState<FormState>({ categoryId: '', brand: '', name: '', modelNumber: '', price: '', janCode: '', description: '' });
+  const [form, setForm] = useState<FormState>({ categoryId: '', referenceUrl: '', brand: '', name: '', modelNumber: '', price: '', janCode: '', description: '' });
   const [errors, setErrors] = useState<Partial<FormState>>({});
   const [done, setDone] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -214,10 +215,7 @@ export default function ProductRegistration() {
   function validate() {
     const e: Partial<FormState> = {};
     if (!form.categoryId) e.categoryId = 'カテゴリを選択してください';
-    if (!form.brand.trim()) e.brand = 'メーカー名を入力してください';
     if (!form.name.trim()) e.name = '商品名を入力してください';
-    if (!form.modelNumber.trim()) e.modelNumber = '型番を入力してください';
-    if (!form.price.trim()) e.price = '価格を入力してください';
     return e;
   }
 
@@ -230,12 +228,13 @@ export default function ProductRegistration() {
       const hasRatings = Object.values(pendingRatings).some((v) => v > 0);
       await api.suggestions.createProduct({
         categoryId: parseInt(form.categoryId, 10),
-        brand: form.brand,
+        brand: form.brand || undefined,
         name: form.name,
-        modelNumber: form.modelNumber,
+        modelNumber: form.modelNumber || undefined,
         janCode: form.janCode || undefined,
         price: form.price ? parseInt(form.price.replace(/[^0-9]/g, ''), 10) : undefined,
         description: form.description || undefined,
+        referenceUrl: form.referenceUrl || undefined,
         images: [...fetchedImages, ...uploadedImages],
         pendingRatings: hasRatings ? pendingRatings : undefined,
       });
@@ -268,7 +267,7 @@ export default function ProductRegistration() {
           <p className="mt-3 text-center text-sm leading-6 text-[#68746e]">商品情報を受け取りました。<br />運営の確認後に反映されます。</p>
           <div className="mt-8 w-full space-y-3">
             <button type="button" onClick={() => {
-              setForm({ categoryId: '', brand: '', name: '', modelNumber: '', price: '', janCode: '', description: '' });
+              setForm({ categoryId: '', referenceUrl: '', brand: '', name: '', modelNumber: '', price: '', janCode: '', description: '' });
               setFetchedImages([]); setUploadedImages([]); setPendingRatings({}); setDone(false);
             }} className="w-full rounded-2xl bg-[#315c4c] px-5 py-4 font-bold text-white transition hover:bg-[#284b3f]">
               別の商品を登録する
@@ -295,14 +294,10 @@ export default function ProductRegistration() {
             <p className="mt-2 text-sm leading-6 text-[#68746e]">まだ登録されていない商品の情報を教えてください。</p>
           </div>
           <form onSubmit={handleSubmit} noValidate className="mt-6 space-y-5 px-5">
-            {/* JAN code */}
+            {/* Reference URL */}
             <div>
-              <label className={labelClass}>JANコード <span className="text-slate-400 font-normal text-xs">（入力すると自動取得）</span></label>
-              <div className="relative mt-2">
-                <input type="text" inputMode="numeric" value={form.janCode} onChange={(e) => set('janCode', e.target.value)} placeholder="例: 4901234567890" className={inputClass} maxLength={14} />
-                {janLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#315c4c] animate-pulse">取得中…</span>}
-              </div>
-              {janError && <p className={errorClass}>{janError}</p>}
+              <label className={labelClass}>参考ページURL <span className="text-slate-400 font-normal text-xs">（任意）</span></label>
+              <input type="url" value={form.referenceUrl} onChange={(e) => set('referenceUrl', e.target.value)} placeholder="例: https://www.amazon.co.jp/dp/..." className={`${inputClass} mt-2`} />
             </div>
 
             {/* Category */}
@@ -324,9 +319,8 @@ export default function ProductRegistration() {
 
             {/* Brand */}
             <div>
-              <label className={labelClass}>メーカー名 <span className="text-red-500">*</span></label>
+              <label className={labelClass}>メーカー名 <span className="text-slate-400 font-normal text-xs">（任意）</span></label>
               <input type="text" value={form.brand} onChange={(e) => set('brand', e.target.value)} placeholder="例: FIELDOOR" className={`${inputClass} mt-2`} />
-              {errors.brand && <p className={errorClass}>{errors.brand}</p>}
             </div>
 
             {/* Name */}
@@ -338,22 +332,20 @@ export default function ProductRegistration() {
 
             {/* Model number */}
             <div>
-              <label className={labelClass}>型番 <span className="text-red-500">*</span></label>
+              <label className={labelClass}>型番 <span className="text-slate-400 font-normal text-xs">（任意）</span></label>
               <input type="text" value={form.modelNumber} onChange={(e) => set('modelNumber', e.target.value)} placeholder="例: FD-T200" className={`${inputClass} mt-2`} />
-              {errors.modelNumber && <p className={errorClass}>{errors.modelNumber}</p>}
             </div>
 
             {/* Description */}
             <div>
               <label className={labelClass}>商品説明 <span className="text-slate-400 font-normal text-xs">（任意）</span></label>
-              <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} placeholder="JANコードで自動取得、または手入力" className={`${inputClass} mt-2 resize-none`} />
+              <textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={3} placeholder="商品の特徴や気になる点など" className={`${inputClass} mt-2 resize-none`} />
             </div>
 
             {/* Price */}
             <div>
-              <label className={labelClass}>参考価格（円） <span className="text-red-500">*</span></label>
+              <label className={labelClass}>参考価格（円） <span className="text-slate-400 font-normal text-xs">（任意）</span></label>
               <input type="number" min="0" value={form.price} onChange={(e) => set('price', e.target.value)} placeholder="例: 12800" className={`${inputClass} mt-2`} />
-              {errors.price && <p className={errorClass}>{errors.price}</p>}
             </div>
 
             {/* Images */}
@@ -389,6 +381,16 @@ export default function ProductRegistration() {
                   placeholder="画像URLを入力（任意）" className={`${inputClass} flex-1`} />
                 <button type="button" onClick={addUrlImage} className="shrink-0 rounded-xl border border-[#dce5df] bg-white px-3 py-2 text-sm font-semibold text-[#315c4c] transition hover:border-[#315c4c]">追加</button>
               </div>
+            </div>
+
+            {/* JAN code — moved to bottom */}
+            <div>
+              <label className={labelClass}>JANコード <span className="text-slate-400 font-normal text-xs">（任意・入力すると自動取得）</span></label>
+              <div className="relative mt-2">
+                <input type="text" inputMode="numeric" value={form.janCode} onChange={(e) => set('janCode', e.target.value)} placeholder="例: 4901234567890" className={inputClass} maxLength={14} />
+                {janLoading && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-[#315c4c] animate-pulse">取得中…</span>}
+              </div>
+              {janError && <p className={errorClass}>{janError}</p>}
             </div>
 
             {/* Pending ratings — shown when category has criteria */}
