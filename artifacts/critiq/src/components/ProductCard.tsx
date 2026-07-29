@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Link } from 'wouter';
 import type { ApiProduct } from '@/types/api';
 import type { MatchCriterion, MatchResult } from '@/lib/calculateMatch';
@@ -31,6 +32,31 @@ function CriterionRow({ criterion, selected }: { criterion: MatchCriterion; sele
         : <StarRating score={criterion.score} />
       }
     </li>
+  );
+}
+
+const INITIAL_SHOW = 3;
+
+function OtherCriteriaSection({ criteria }: { criteria: MatchCriterion[] }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? criteria : criteria.slice(0, INITIAL_SHOW);
+  const hasMore = criteria.length > INITIAL_SHOW;
+  return (
+    <section className="mt-5">
+      <h3 className="text-sm font-bold text-slate-900">参考情報</h3>
+      <ul className="mt-2 divide-y divide-slate-100">
+        {visible.map((c) => <CriterionRow key={c.id} criterion={c} selected={false} />)}
+      </ul>
+      {hasMore && (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-1 text-xs font-semibold text-[#315c4c] hover:underline"
+        >
+          {expanded ? '▲ 折りたたむ' : `▼ 他 ${criteria.length - INITIAL_SHOW} 件を表示`}
+        </button>
+      )}
+    </section>
   );
 }
 
@@ -80,20 +106,27 @@ export default function ProductCard({ product, match }: ProductCardProps) {
         )}
 
         {match.otherCriteria.length > 0 && (
-          <section className="mt-5">
-            <h3 className="text-sm font-bold text-slate-900">参考情報</h3>
-            <ul className="mt-2 divide-y divide-slate-100">
-              {match.otherCriteria.map((c) => <CriterionRow key={c.id} criterion={c} selected={false} />)}
-            </ul>
-          </section>
+          <OtherCriteriaSection criteria={match.otherCriteria} />
         )}
 
-        <Link
-          href={`/product/${product.id}`}
-          className="mt-5 block w-full rounded-2xl border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
-        >
-          商品詳細を見る
-        </Link>
+        <div className="mt-5 flex flex-col gap-2">
+          {product.amazonAffiliateUrl && (
+            <a
+              href={product.amazonAffiliateUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block w-full rounded-2xl bg-[#FF9900] px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-[#e88a00]"
+            >
+              🛒 Amazonで商品を見る
+            </a>
+          )}
+          <Link
+            href={`/product/${product.id}`}
+            className="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+          >
+            商品詳細を見る
+          </Link>
+        </div>
       </div>
     </article>
   );
