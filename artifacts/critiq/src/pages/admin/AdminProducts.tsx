@@ -69,11 +69,14 @@ type FormState = {
   description: string;
   status: string;
   imageUrls: string; // newline-separated
+  amazonAffiliateUrl: string;
+  asin: string;
 };
 
 const EMPTY_FORM: FormState = {
   categoryId: '', brand: '', name: '', modelNumber: '',
   janCode: '', price: '', description: '', status: 'active', imageUrls: '',
+  amazonAffiliateUrl: '', asin: '',
 };
 
 // ─── JAN lookup result type ────────────────────────────────
@@ -283,6 +286,28 @@ function ProductForm({
             </div>
           )}
         </div>
+
+        {/* Amazon affiliate URL — full width */}
+        <div className="sm:col-span-2 border-t border-[#dce5df] pt-4">
+          <p className="mb-3 text-xs font-bold text-[#315c4c]">🛒 Amazonアソシエイト（管理者のみ）</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <label className={labelClass}>AmazonアフィリエイトURL <span className="font-normal text-slate-400">（任意）</span></label>
+              <input type="url" value={form.amazonAffiliateUrl}
+                onChange={(e) => set('amazonAffiliateUrl', e.target.value)}
+                placeholder="https://www.amazon.co.jp/dp/..."
+                className={inputClass} />
+            </div>
+            <div>
+              <label className={labelClass}>ASIN <span className="font-normal text-slate-400">（任意・自動で大文字化）</span></label>
+              <input type="text" value={form.asin}
+                onChange={(e) => set('asin', e.target.value.toUpperCase())}
+                placeholder="例: B09XYZ1234"
+                maxLength={10}
+                className={`${inputClass} font-mono uppercase`} />
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="flex gap-3 border-t border-[#dce5df] px-6 py-4">
@@ -339,6 +364,8 @@ export default function AdminProducts() {
       description: p.description ?? '',
       status: p.status,
       imageUrls: p.images.join('\n'),
+      amazonAffiliateUrl: p.amazonAffiliateUrl ?? '',
+      asin: p.asin ?? '',
     });
     setEditTarget(p);
     setMode('edit');
@@ -359,6 +386,8 @@ export default function AdminProducts() {
       description: form.description.trim() || undefined,
       status: form.status,
       images: form.imageUrls.split('\n').map((u) => u.trim()).filter(Boolean),
+      amazonAffiliateUrl: form.amazonAffiliateUrl.trim() || null,
+      asin: form.asin.trim() || null,
     };
   }
 
@@ -465,10 +494,9 @@ export default function AdminProducts() {
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           {p.images[0] ? (
-                            <img src={p.images[0]} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" />
-                          ) : (
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f1f6f3] text-lg">📦</div>
-                          )}
+                            <img src={p.images[0]} alt="" className="h-10 w-10 shrink-0 rounded-lg object-cover" onError={(e) => { const el = e.target as HTMLImageElement; el.style.display = 'none'; el.nextElementSibling?.classList.remove('hidden'); }} />
+                          ) : null}
+                          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f1f6f3] text-lg${p.images[0] ? ' hidden' : ''}`}>📦</div>
                           <div>
                             <p className="font-bold text-[#1f2a25]">{p.name}</p>
                             <p className="text-xs text-[#68746e]">{p.brand}{p.modelNumber ? ` · ${p.modelNumber}` : ''}</p>

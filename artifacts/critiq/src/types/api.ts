@@ -40,6 +40,8 @@ export type ApiProduct = {
   reviewCount: number;
   images: string[];
   ratings: ApiRatingEntry[];
+  amazonAffiliateUrl: string | null;
+  asin: string | null;
 };
 
 export type AdminProductItem = {
@@ -54,6 +56,8 @@ export type AdminProductItem = {
   status: string;
   reviewCount: number;
   images: string[];
+  amazonAffiliateUrl: string | null;
+  asin: string | null;
   createdAt: string;
 };
 

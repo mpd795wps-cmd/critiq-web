@@ -253,12 +253,23 @@ export default function ProductDetail() {
         </div>
 
         {/* Rate CTA */}
-        <div className="mt-4 px-5">
+        <div className="mt-4 px-5 flex flex-col gap-3">
           <Link href={`/grow/rating?productId=${product.id}`}
             className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-[#315c4c] px-5 py-4 font-bold text-[#315c4c] transition hover:bg-[#315c4c] hover:text-white">
             <span aria-hidden="true">✎</span>
             <span>この商品を評価する</span>
           </Link>
+          {product.amazonAffiliateUrl && (
+            <a
+              href={product.amazonAffiliateUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex w-full items-center justify-center gap-2 rounded-2xl bg-[#FF9900] px-5 py-4 font-bold text-white transition hover:bg-[#e88a00]"
+            >
+              <span aria-hidden="true">🛒</span>
+              <span>Amazonで商品を見る</span>
+            </a>
+          )}
         </div>
 
         {/* Criterion ratings */}

@@ -67,6 +67,8 @@ router.get("/categories/:categoryId/products", async (req, res): Promise<void> =
       ratings: ratings.map((r) => ({
         criterionId: r.criterionId, score: parseFloat(String(r.score)), count: r.count,
       })),
+      amazonAffiliateUrl: p.amazonAffiliateUrl ?? null,
+      asin: p.asin ?? null,
     };
   }));
 

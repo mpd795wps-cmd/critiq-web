@@ -15,6 +15,8 @@ async function buildProductDto(p: typeof productsTable.$inferSelect) {
     modelNumber: p.modelNumber, janCode: p.janCode, price: p.price,
     description: p.description, status: p.status, reviewCount: p.reviewCount,
     images: images.map((i) => i.url),
+    amazonAffiliateUrl: p.amazonAffiliateUrl ?? null,
+    asin: p.asin ?? null,
     createdAt: p.createdAt.toISOString(),
   };
 }
@@ -35,10 +37,12 @@ router.get("/admin/products", async (req, res): Promise<void> => {
 });
 
 router.post("/admin/products", async (req, res): Promise<void> => {
-  const { categoryId, name, brand, modelNumber, janCode, price, description, status, images } = req.body as Record<string, unknown>;
+  const { categoryId, name, brand, modelNumber, janCode, price, description, status, images, amazonAffiliateUrl, asin } = req.body as Record<string, unknown>;
   if (typeof categoryId !== "number" || typeof name !== "string" || !name.trim() || typeof brand !== "string" || !brand.trim()) {
     res.status(400).json({ error: "categoryId, name, brand は必須です" }); return;
   }
+  const rawAmazonUrl = typeof amazonAffiliateUrl === "string" ? amazonAffiliateUrl.trim() : null;
+  const validAmazonUrl = rawAmazonUrl && /^https?:\/\//i.test(rawAmazonUrl) ? rawAmazonUrl : null;
   const [product] = await db.insert(productsTable).values({
     categoryId, name: name.trim(), brand: brand.trim(),
     modelNumber: typeof modelNumber === "string" ? modelNumber.trim() : "",
@@ -46,6 +50,8 @@ router.post("/admin/products", async (req, res): Promise<void> => {
     price: typeof price === "number" ? price : 0,
     description: typeof description === "string" && description.trim() ? description.trim() : null,
     status: (status === "pending" || status === "rejected") ? status : "active",
+    amazonAffiliateUrl: validAmazonUrl,
+    asin: typeof asin === "string" && asin.trim() ? asin.trim().toUpperCase() : null,
   }).returning();
   if (Array.isArray(images)) {
     await Promise.all((images as string[]).map((url, i) =>
@@ -58,7 +64,9 @@ router.post("/admin/products", async (req, res): Promise<void> => {
 router.put("/admin/products/:id", async (req, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
-  const { categoryId, name, brand, modelNumber, janCode, price, description, status, images } = req.body as Record<string, unknown>;
+  const { categoryId, name, brand, modelNumber, janCode, price, description, status, images, amazonAffiliateUrl, asin } = req.body as Record<string, unknown>;
+  const rawAmazonUrl = typeof amazonAffiliateUrl === "string" ? amazonAffiliateUrl.trim() : null;
+  const validAmazonUrl = rawAmazonUrl && /^https?:\/\//i.test(rawAmazonUrl) ? rawAmazonUrl : null;
   const [product] = await db.update(productsTable).set({
     ...(typeof categoryId === "number" ? { categoryId } : {}),
     ...(typeof name === "string" && name.trim() ? { name: name.trim() } : {}),
@@ -68,6 +76,8 @@ router.put("/admin/products/:id", async (req, res): Promise<void> => {
     ...(typeof price === "number" ? { price } : {}),
     description: typeof description === "string" && description.trim() ? description.trim() : null,
     ...(status ? { status: status as "active" | "pending" | "rejected" } : {}),
+    amazonAffiliateUrl: "amazonAffiliateUrl" in (req.body as object) ? validAmazonUrl : undefined,
+    asin: "asin" in (req.body as object) ? (typeof asin === "string" && asin.trim() ? asin.trim().toUpperCase() : null) : undefined,
   }).where(eq(productsTable.id, id)).returning();
   if (!product) { res.status(404).json({ error: "Not found" }); return; }
   if (Array.isArray(images)) {

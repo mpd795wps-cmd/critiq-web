@@ -39,6 +39,8 @@ router.get("/products/:productId", async (req, res): Promise<void> => {
     ratings: ratings.map((r) => ({
       criterionId: r.criterionId, score: parseFloat(String(r.score)), count: r.count,
     })),
+    amazonAffiliateUrl: product.amazonAffiliateUrl ?? null,
+    asin: product.asin ?? null,
   });
 });
 

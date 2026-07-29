@@ -19,6 +19,8 @@ export const productsTable = pgTable("products", {
   description: text("description"),
   status: text("status").notNull().default("active").$type<ProductStatus>(),
   reviewCount: integer("review_count").notNull().default(0),
+  amazonAffiliateUrl: text("amazon_affiliate_url"),
+  asin: text("asin"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow().$onUpdate(() => new Date()),
 });
