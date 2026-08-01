@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { signAdminToken, setAdminCookie, clearAdminCookie, requireAdmin, COOKIE_NAME } from "../../lib/adminAuth";
+import { signAdminToken, setAdminCookie, clearAdminCookie, requireAdmin, COOKIE_NAME } from "../../lib/adminAuth.js";
 
 const router = Router();
 

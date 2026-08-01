@@ -1,8 +1,8 @@
 import { pgTable, serial, integer, numeric, timestamp, unique } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { productsTable } from "./products";
-import { criteriaTable } from "./criteria";
+import { productsTable } from "./products.js";
+import { criteriaTable } from "./criteria.js";
 
 export const productRatingsTable = pgTable(
   "product_ratings",

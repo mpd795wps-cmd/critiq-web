@@ -1,6 +1,6 @@
 import jwt from "jsonwebtoken";
 import type { Request, Response, NextFunction } from "express";
-import { logger } from "./logger";
+import { logger } from "./logger.js";
 
 const COOKIE_NAME = "critiq_admin";
 const TOKEN_TTL = "7d";

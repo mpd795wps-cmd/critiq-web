@@ -5,8 +5,8 @@ import {
   productRatingsTable, categoriesTable, ratingVotesTable,
 } from "@workspace/db";
 import { eq, desc, and } from "drizzle-orm";
-import { requireAdmin } from "../../lib/adminAuth";
-import { sendMail, criterionApprovedMail, criterionRejectedMail, productApprovedMail, productRejectedMail } from "../../lib/mailer";
+import { requireAdmin } from "../../lib/adminAuth.js";
+import { sendMail, criterionApprovedMail, criterionRejectedMail, productApprovedMail, productRejectedMail } from "../../lib/mailer.js";
 
 const router = Router();
 router.use(requireAdmin);

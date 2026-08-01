@@ -1,9 +1,9 @@
 import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { categoriesTable } from "./categories";
-import { usersTable } from "./users";
-import { criteriaTable } from "./criteria";
+import { categoriesTable } from "./categories.js";
+import { usersTable } from "./users.js";
+import { criteriaTable } from "./criteria.js";
 
 export const suggestionStatusEnum = ["pending", "approved", "rejected"] as const;
 export type SuggestionStatus = (typeof suggestionStatusEnum)[number];

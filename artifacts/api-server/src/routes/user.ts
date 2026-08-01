@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { db, criterionSuggestionsTable, productSuggestionsTable, criteriaTable, categoriesTable } from "@workspace/db";
 import { eq, desc, inArray, or, and } from "drizzle-orm";
-import { requireUser } from "../lib/userAuth";
-import type { UserPayload } from "../lib/userAuth";
+import { requireUser } from "../lib/userAuth.js";
+import type { UserPayload } from "../lib/userAuth.js";
 
 const router = Router();
 

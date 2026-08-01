@@ -88,7 +88,9 @@ function extractImages(html: string): string[] {
 
   if (twitterImage && !images.includes(twitterImage)) {
     images.push(
-      twitterImage.startsWith("//") ? `https:${twitterImage}` : twitterImage,
+      twitterImage.startsWith("//")
+        ? `https:${twitterImage}`
+        : twitterImage,
     );
   }
 
@@ -110,7 +112,6 @@ function guessBrand(html: string, url: string): string {
   }
 }
 
-// POST /products/fetch-url
 router.post("/products/fetch-url", async (req, res): Promise<void> => {
   const { url } = req.body as { url?: string };
 
@@ -162,31 +163,24 @@ router.post("/products/fetch-url", async (req, res): Promise<void> => {
       buffer.slice(0, 500_000),
     );
 
-    const ogTitle = extractMeta(html, "og:title");
-    const ogDescription = extractMeta(html, "og:description");
-    const metaDescription = extractMeta(html, "description");
-
-    const title = ogTitle || extractTitle(html);
-    const description = ogDescription || metaDescription;
-    const images = extractImages(html);
-    const price = extractPrice(html);
-    const brand = guessBrand(html, url);
+    const title =
+      extractMeta(html, "og:title") || extractTitle(html);
+    const description =
+      extractMeta(html, "og:description") ||
+      extractMeta(html, "description");
 
     res.json({
       name: title,
-      brand,
+      brand: guessBrand(html, url),
       description,
-      images,
-      price,
+      images: extractImages(html),
+      price: extractPrice(html),
     });
   } catch (error) {
     const message =
-      error instanceof Error ? error.message : String(error);
+      error instanceof Error ? error.message.toLowerCase() : String(error);
 
-    if (
-      message.toLowerCase().includes("timeout") ||
-      message.toLowerCase().includes("abort")
-    ) {
+    if (message.includes("timeout") || message.includes("abort")) {
       res.status(422).json({
         error: "ページの読み込みがタイムアウトしました",
       });

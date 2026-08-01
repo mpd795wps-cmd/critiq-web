@@ -1,6 +1,6 @@
 import { pgTable, serial, integer, text, timestamp, unique } from "drizzle-orm/pg-core";
-import { productsTable } from "./products";
-import { criteriaTable } from "./criteria";
+import { productsTable } from "./products.js";
+import { criteriaTable } from "./criteria.js";
 
 // ── Rating votes (IP-based dedup) ────────────────────────────
 export const ratingVotesTable = pgTable(

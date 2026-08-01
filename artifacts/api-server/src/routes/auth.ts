@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, usersTable } from "@workspace/db";
 import { eq } from "drizzle-orm";
-import { setUserCookie, clearUserCookie, verifyUserToken } from "../lib/userAuth";
+import { setUserCookie, clearUserCookie, verifyUserToken } from "../lib/userAuth.js";
 
 const router = Router();
 
