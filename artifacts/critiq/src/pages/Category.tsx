@@ -1,5 +1,6 @@
 import { Link, useParams } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
+import { GlassWater } from 'lucide-react';
 import { api } from '@/lib/api';
 import CriteriaSelector from '@/components/CriteriaSelector';
 import { usePageMeta } from '@/hooks/usePageMeta';
@@ -28,6 +29,9 @@ export default function Category() {
   });
 
   const isLoading = loadingCats || (!!category && loadingCriteria);
+  const isMousewash =
+    ['mousewash', 'mouse-wash', 'mouse_wash'].includes((category?.slug ?? '').toLowerCase()) ||
+    category?.name === 'マウスウォッシュ';
 
   if (!loadingCats && !category) {
     return (
@@ -59,7 +63,11 @@ export default function Category() {
 
         <header className="mt-7">
           <div className="flex items-center gap-3">
-            <span className="text-4xl" aria-hidden="true">{category?.icon ?? '…'}</span>
+            {isMousewash ? (
+              <GlassWater className="size-10 text-[#315c4c]" aria-hidden="true" />
+            ) : (
+              <span className="text-4xl" aria-hidden="true">{category?.icon ?? '…'}</span>
+            )}
             <div>
               <p className="text-sm font-bold text-[#315c4c]">アウトドア用品</p>
               <h1 className="mt-1 text-3xl font-bold">{category?.name ?? '　'}</h1>

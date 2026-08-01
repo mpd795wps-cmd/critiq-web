@@ -1,5 +1,6 @@
 import { Link } from 'wouter';
 import { useQuery } from '@tanstack/react-query';
+import { GlassWater } from 'lucide-react';
 import { api } from '@/lib/api';
 import { usePageMeta } from '@/hooks/usePageMeta';
 
@@ -45,16 +46,27 @@ export default function Explore() {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3">
-              {categories.map((category) => (
-                <Link
-                  key={category.id}
-                  href={`/explore/${category.slug}`}
-                  className="flex flex-col items-center justify-center gap-2 rounded-[1.5rem] border border-[#dce5df] bg-white p-5 text-center transition hover:border-[#9fbdad] hover:bg-[#f1f6f3] active:scale-[0.98]"
-                >
-                  <span className="text-3xl" aria-hidden="true">{category.icon}</span>
-                  <span className="text-sm font-bold">{category.name}</span>
-                </Link>
-              ))}
+              {categories.map((category) => {
+                const categorySlug = (category.slug ?? '').toLowerCase();
+                const isMousewash =
+                  ['mousewash', 'mouse-wash', 'mouse_wash'].includes(categorySlug) ||
+                  category.name === 'マウスウォッシュ';
+
+                return (
+                  <Link
+                    key={category.id}
+                    href={`/explore/${category.slug}`}
+                    className="flex flex-col items-center justify-center gap-2 rounded-[1.5rem] border border-[#dce5df] bg-white p-5 text-center transition hover:border-[#9fbdad] hover:bg-[#f1f6f3] active:scale-[0.98]"
+                  >
+                    {isMousewash ? (
+                      <GlassWater className="size-8 text-[#315c4c]" aria-hidden="true" />
+                    ) : (
+                      <span className="text-3xl" aria-hidden="true">{category.icon}</span>
+                    )}
+                    <span className="text-sm font-bold">{category.name}</span>
+                  </Link>
+                );
+              })}
             </div>
           )}
         </section>
