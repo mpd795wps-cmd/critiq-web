@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import healthRouter from "./health";
+import healthRouter from "./health.js";
 import janRouter from "./jan";
 import uploadRouter from "./upload";
 import categoriesRouter from "./public/categories";
