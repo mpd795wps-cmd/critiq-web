@@ -254,7 +254,7 @@ export default function ProductDetail() {
 
         {/* Rate CTA */}
         <div className="mt-4 px-5">
-          <Link href={`/grow/rating?productId=${product.id}`}
+          <Link href={`/grow/rating/${product.id}`}
             className="flex w-full items-center justify-center gap-2 rounded-2xl border-2 border-[#315c4c] px-5 py-4 font-bold text-[#315c4c] transition hover:bg-[#315c4c] hover:text-white">
             <span aria-hidden="true">✎</span>
             <span>この商品を評価する</span>

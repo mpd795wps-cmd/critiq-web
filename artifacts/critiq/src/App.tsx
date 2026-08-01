@@ -8,6 +8,7 @@ import Results from '@/pages/Results';
 import Grow from '@/pages/Grow';
 import ProductDetail from '@/pages/ProductDetail';
 import GrowRating from '@/pages/grow/Rating';
+import RatingDirect from '@/pages/grow/RatingDirect';
 import GrowProduct from '@/pages/grow/ProductRegistration';
 import GrowCriterion from '@/pages/grow/CriterionSuggestion';
 import NotFound from '@/pages/NotFound';
@@ -52,6 +53,7 @@ function Router() {
       <Route path="/explore/:categorySlug/results" component={Results} />
       <Route path="/explore/:categorySlug" component={Category} />
       <Route path="/grow" component={Grow} />
+      <Route path="/grow/rating/:productId" component={RatingDirect} />
       <Route path="/grow/rating" component={GrowRating} />
       <Route path="/grow/product" component={GrowProduct} />
       <Route path="/grow/criterion" component={GrowCriterion} />
