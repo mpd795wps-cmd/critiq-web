@@ -1,21 +1,21 @@
 import { Router, type IRouter } from "express";
-import healthRouter from "./health";
-import janRouter from "./jan";
-import uploadRouter from "./upload";
-import categoriesRouter from "./public/categories";
-import criteriaRouter from "./public/criteria";
-import productsRouter from "./public/products";
-import suggestionsRouter from "./public/suggestions";
-import fetchUrlRouter from "./public/fetchUrl";
-import authRouter from "./auth";
-import userRouter from "./user";
-import adminAuthRouter from "./admin/auth";
-import adminCategoriesRouter from "./admin/categories";
-import adminCriteriaRouter from "./admin/criteria";
-import adminProductsRouter from "./admin/products";
-import adminSuggestionsRouter from "./admin/suggestions";
-import adminUsersRouter from "./admin/users";
-import adminCategorySuggestionsRouter from "./admin/categorySuggestions";
+import healthRouter from "./health.js";
+import janRouter from "./jan.js";
+import uploadRouter from "./upload.js";
+import categoriesRouter from "./public/categories.js";
+import criteriaRouter from "./public/criteria.js";
+import productsRouter from "./public/products.js";
+import suggestionsRouter from "./public/suggestions.js";
+import fetchUrlRouter from "./public/fetchUrl.js";
+import authRouter from "./auth.js";
+import userRouter from "./user.js";
+import adminAuthRouter from "./admin/auth.js";
+import adminCategoriesRouter from "./admin/categories.js";
+import adminCriteriaRouter from "./admin/criteria.js";
+import adminProductsRouter from "./admin/products.js";
+import adminSuggestionsRouter from "./admin/suggestions.js";
+import adminUsersRouter from "./admin/users.js";
+import adminCategorySuggestionsRouter from "./admin/categorySuggestions.js";
 
 const router: IRouter = Router();
 

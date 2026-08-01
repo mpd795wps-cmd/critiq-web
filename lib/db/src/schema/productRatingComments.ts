@@ -1,6 +1,6 @@
 import { pgTable, serial, integer, text, timestamp } from "drizzle-orm/pg-core";
-import { productsTable } from "./products";
-import { criteriaTable } from "./criteria";
+import { productsTable } from "./products.js";
+import { criteriaTable } from "./criteria.js";
 
 export const productRatingCommentsTable = pgTable("product_rating_comments", {
   id: serial("id").primaryKey(),

@@ -1,7 +1,7 @@
 import { pgTable, serial, text, integer, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
-import { categoriesTable } from "./categories";
+import { categoriesTable } from "./categories.js";
 
 export const productStatusEnum = ["active", "pending", "rejected"] as const;
 export type ProductStatus = (typeof productStatusEnum)[number];

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { db, criteriaTable } from "@workspace/db";
 import { eq, asc, and, inArray } from "drizzle-orm";
-import { requireAdmin } from "../../lib/adminAuth";
+import { requireAdmin } from "../../lib/adminAuth.js";
 
 const router = Router();
 router.use(requireAdmin);

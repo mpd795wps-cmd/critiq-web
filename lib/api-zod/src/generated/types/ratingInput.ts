@@ -5,7 +5,7 @@
  * CRITIQ API
  * OpenAPI spec version: 0.1.0
  */
-import type { RatingInputScores } from './ratingInputScores';
+import type { RatingInputScores } from './ratingInputScores.js';
 
 export interface RatingInput {
   scores: RatingInputScores;

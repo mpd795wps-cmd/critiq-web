@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { db, categorySuggestionsTable } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { requireAdmin } from "../../lib/adminAuth";
-import { sendMail, categoryApprovedMail, categoryRejectedMail } from "../../lib/mailer";
+import { requireAdmin } from "../../lib/adminAuth.js";
+import { sendMail, categoryApprovedMail, categoryRejectedMail } from "../../lib/mailer.js";
 
 const router = Router();
 router.use(requireAdmin);
