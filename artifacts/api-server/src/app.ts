@@ -4,11 +4,7 @@ import cookieParser from "cookie-parser";
 import { pinoHttp } from "pino-http";
 import path from "path";
 import router from "./routes/index.js";
-<<<<<<< HEAD
-import { logger } from "./lib/logger";
-=======
 import { logger } from "./lib/logger.js";
->>>>>>> fix/vercel-neon-integration
 
 const app: Express = express();
 
