@@ -1,38 +1,64 @@
 import { Router } from "express";
 import multer from "multer";
 import path from "path";
-import fs from "fs";
 import { randomBytes } from "crypto";
+import { put } from "@vercel/blob";
 
 const router = Router();
 
-const UPLOADS_DIR = path.join(process.cwd(), "public", "uploads");
-fs.mkdirSync(UPLOADS_DIR, { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => cb(null, UPLOADS_DIR),
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase() || ".jpg";
-    cb(null, `${Date.now()}-${randomBytes(6).toString("hex")}${ext}`);
-  },
-});
-
 const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) cb(null, true);
-    else cb(new Error("画像ファイルのみアップロードできます"));
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024,
+  },
+  fileFilter: (_req, file, callback) => {
+    if (file.mimetype.startsWith("image/")) {
+      callback(null, true);
+      return;
+    }
+
+    callback(new Error("画像ファイルのみアップロードできます"));
   },
 });
 
-// POST /upload/image  →  { url: "/api/uploads/<filename>" }
-router.post("/upload/image", upload.single("image"), (req, res): void => {
-  if (!req.file) {
-    res.status(400).json({ error: "ファイルが見つかりません" });
-    return;
-  }
-  res.json({ url: `/api/uploads/${req.file.filename}` });
-});
+// POST /api/upload/image
+router.post(
+  "/upload/image",
+  upload.single("image"),
+  async (req, res): Promise<void> => {
+    if (!req.file) {
+      res.status(400).json({
+        error: "ファイルが見つかりません",
+      });
+      return;
+    }
+
+    try {
+      const originalExtension =
+        path.extname(req.file.originalname).toLowerCase() || ".jpg";
+
+      const filename =
+        `uploads/${Date.now()}-` +
+        `${randomBytes(6).toString("hex")}` +
+        originalExtension;
+
+      const blob = await put(filename, req.file.buffer, {
+        access: "public",
+        contentType: req.file.mimetype,
+        addRandomSuffix: false,
+      });
+
+      res.json({
+        url: blob.url,
+      });
+    } catch (error) {
+      console.error("Image upload failed:", error);
+
+      res.status(500).json({
+        error: "画像のアップロードに失敗しました",
+      });
+    }
+  },
+);
 
 export default router;
