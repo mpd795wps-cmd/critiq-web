@@ -1,23 +1,5 @@
 import { Router, type IRouter } from "express";
 import healthRouter from "./health.js";
-<<<<<<< HEAD
-import janRouter from "./jan";
-import uploadRouter from "./upload";
-import categoriesRouter from "./public/categories";
-import criteriaRouter from "./public/criteria";
-import productsRouter from "./public/products";
-import suggestionsRouter from "./public/suggestions";
-import fetchUrlRouter from "./public/fetchUrl";
-import authRouter from "./auth";
-import userRouter from "./user";
-import adminAuthRouter from "./admin/auth";
-import adminCategoriesRouter from "./admin/categories";
-import adminCriteriaRouter from "./admin/criteria";
-import adminProductsRouter from "./admin/products";
-import adminSuggestionsRouter from "./admin/suggestions";
-import adminUsersRouter from "./admin/users";
-import adminCategorySuggestionsRouter from "./admin/categorySuggestions";
-=======
 import janRouter from "./jan.js";
 import uploadRouter from "./upload.js";
 import categoriesRouter from "./public/categories.js";
@@ -34,7 +16,6 @@ import adminProductsRouter from "./admin/products.js";
 import adminSuggestionsRouter from "./admin/suggestions.js";
 import adminUsersRouter from "./admin/users.js";
 import adminCategorySuggestionsRouter from "./admin/categorySuggestions.js";
->>>>>>> fix/vercel-neon-integration
 
 const router: IRouter = Router();
 
