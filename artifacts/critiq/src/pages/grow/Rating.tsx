@@ -155,8 +155,8 @@ function ProductRow({
   const isDone = doneIds.has(product.id);
   return (
     <div className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition ${isExpanded ? 'border-[#315c4c]' : 'border-[#dce5df]'}`}>
-      <button type="button"
-        onClick={() => onToggle(product.id)}
+      <Link
+        href={`/grow/rating/${product.id}`}
         className="flex w-full items-center gap-4 px-4 py-3 text-left transition hover:bg-[#f1f6f3]">
         {product.images[0] && <img src={product.images[0]} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />}
         <div className="min-w-0 flex-1">
@@ -165,19 +165,15 @@ function ProductRow({
           <p className="mt-0.5 text-xs text-slate-400">{product.brand}{product.modelNumber ? ` · ${product.modelNumber}` : ''}</p>
         </div>
         {isDone ? (
-          <span className="shrink-0 text-xs font-bold text-[#315c4c]">✓ 評価済み</span>
+          <span className="shrink-0 text-xs font-bold text-[#315c4c]">
+            ✓ 評価済み
+          </span>
         ) : (
-          <span className="shrink-0 text-xs text-slate-400">{isExpanded ? '▲' : '▼'}</span>
+          <span className="shrink-0 text-lg text-[#315c4c]" aria-hidden="true">
+            →
+          </span>
         )}
-      </button>
-      {isExpanded && (
-        <InlineRatingForm
-          key={product.id}
-          product={product}
-          criteria={criteria}
-          onDone={() => onDone(product.id)}
-        />
-      )}
+      </Link>
     </div>
   );
 }
