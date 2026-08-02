@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, Fragment } from 'react';
+import { useState, useRef, useCallback, Fragment, type ChangeEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from './AdminLayout';
 import { api } from '@/lib/api';
@@ -108,6 +108,9 @@ function ProductForm({
   const [urlInput, setUrlInput] = useState('');
   const [urlFetching, setUrlFetching] = useState(false);
   const [urlMsg, setUrlMsg] = useState('');
+  const [imageUploading, setImageUploading] = useState(false);
+  const [imageUploadMsg, setImageUploadMsg] = useState('');
+  const imageInputRef = useRef<HTMLInputElement | null>(null);
 
   const set = useCallback((key: keyof FormState, value: string) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -165,6 +168,101 @@ function ProductForm({
       setUrlMsg(e instanceof Error ? e.message : '取得に失敗しました');
     } finally {
       setUrlFetching(false);
+    }
+  }
+
+  function getImageUrls(): string[] {
+    return form.imageUrls
+      .split('\n')
+      .map((url) => url.trim())
+      .filter(Boolean);
+  }
+
+  function removeImage(indexToRemove: number) {
+    const nextUrls = getImageUrls().filter(
+      (_url, index) => index !== indexToRemove,
+    );
+
+    setForm((prev) => ({
+      ...prev,
+      imageUrls: nextUrls.join('\n'),
+    }));
+  }
+
+  async function handleImageUpload(
+    event: ChangeEvent<HTMLInputElement>,
+  ) {
+    const files = Array.from(event.target.files ?? []);
+
+    if (files.length === 0) {
+      return;
+    }
+
+    const invalidFile = files.find(
+      (file) => !file.type.startsWith('image/'),
+    );
+
+    if (invalidFile) {
+      setImageUploadMsg('画像ファイルのみ選択できます');
+      event.target.value = '';
+      return;
+    }
+
+    const tooLargeFile = files.find(
+      (file) => file.size > 10 * 1024 * 1024,
+    );
+
+    if (tooLargeFile) {
+      setImageUploadMsg('1枚あたり10MB以下の画像を選択してください');
+      event.target.value = '';
+      return;
+    }
+
+    setImageUploading(true);
+    setImageUploadMsg('');
+
+    try {
+      const uploadedUrls: string[] = [];
+
+      for (const file of files) {
+        const url = await api.upload.image(file);
+        uploadedUrls.push(url);
+      }
+
+      setForm((prev) => {
+        const currentUrls = prev.imageUrls
+          .split('\n')
+          .map((url) => url.trim())
+          .filter(Boolean);
+
+        const nextUrls = [
+          ...currentUrls,
+          ...uploadedUrls.filter(
+            (url) => !currentUrls.includes(url),
+          ),
+        ];
+
+        return {
+          ...prev,
+          imageUrls: nextUrls.join('\n'),
+        };
+      });
+
+      setImageUploadMsg(
+        `✓ ${uploadedUrls.length}枚の画像を追加しました`,
+      );
+    } catch (error) {
+      setImageUploadMsg(
+        error instanceof Error
+          ? error.message
+          : '画像のアップロードに失敗しました',
+      );
+    } finally {
+      setImageUploading(false);
+
+      if (imageInputRef.current) {
+        imageInputRef.current.value = '';
+      }
     }
   }
 
@@ -271,20 +369,109 @@ function ProductForm({
             placeholder="商品の特徴や用途を入力" className={`${inputClass} resize-none`} />
         </div>
 
-        {/* Image URLs — full width */}
+        {/* Product images — full width */}
         <div className="sm:col-span-2">
-          <label className={labelClass}>画像 URL <span className="font-normal text-slate-400">（1行に1つ、複数入力可）</span></label>
-          <textarea value={form.imageUrls} onChange={(e) => set('imageUrls', e.target.value)} rows={3}
-            placeholder={'https://example.com/img1.jpg\nhttps://example.com/img2.jpg'}
-            className={`${inputClass} resize-none font-mono text-xs`} />
-          {/* Preview thumbnails */}
-          {form.imageUrls.trim() && (
-            <div className="mt-2 flex flex-wrap gap-2">
-              {form.imageUrls.split('\n').map((url) => url.trim()).filter(Boolean).map((url, i) => (
-                <img key={i} src={url} alt="" className="h-14 w-14 rounded-lg border border-[#dce5df] object-cover" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+          <label className={labelClass}>商品画像</label>
+
+          <div className="mt-2 rounded-2xl border border-dashed border-[#aebdb5] bg-[#f8faf8] p-4">
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={() => imageInputRef.current?.click()}
+                disabled={imageUploading}
+                className="rounded-xl bg-[#315c4c] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#284b3f] disabled:cursor-wait disabled:opacity-60"
+              >
+                {imageUploading
+                  ? 'アップロード中…'
+                  : '画像を選択'}
+              </button>
+
+              <p className="text-xs leading-5 text-[#68746e]">
+                JPEG・PNG・WebP・GIF
+                <br />
+                1枚10MB以下・複数選択可
+              </p>
+            </div>
+
+            {imageUploadMsg && (
+              <p
+                className={`mt-3 text-xs ${
+                  imageUploadMsg.startsWith('✓')
+                    ? 'text-emerald-600'
+                    : 'text-red-500'
+                }`}
+              >
+                {imageUploadMsg}
+              </p>
+            )}
+          </div>
+
+          {getImageUrls().length > 0 && (
+            <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {getImageUrls().map((url, index) => (
+                <div
+                  key={`${url}-${index}`}
+                  className="relative overflow-hidden rounded-xl border border-[#dce5df] bg-white"
+                >
+                  <img
+                    src={url}
+                    alt={`商品画像 ${index + 1}`}
+                    className="aspect-square w-full object-contain"
+                    onError={(event) => {
+                      event.currentTarget.style.opacity = '0.25';
+                    }}
+                  />
+
+                  {index === 0 && (
+                    <span className="absolute left-2 top-2 rounded-full bg-[#315c4c] px-2 py-1 text-[10px] font-bold text-white">
+                      メイン画像
+                    </span>
+                  )}
+
+                  <button
+                    type="button"
+                    onClick={() => removeImage(index)}
+                    className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 text-sm font-bold text-red-500 shadow transition hover:bg-red-50"
+                    aria-label={`商品画像${index + 1}を外す`}
+                    title="この商品から画像を外す"
+                  >
+                    ×
+                  </button>
+                </div>
               ))}
             </div>
           )}
+
+          <details className="mt-3 rounded-xl border border-[#dce5df] bg-white px-4 py-3">
+            <summary className="cursor-pointer text-xs font-bold text-[#315c4c]">
+              画像URLを直接入力する
+            </summary>
+
+            <textarea
+              value={form.imageUrls}
+              onChange={(event) =>
+                set('imageUrls', event.target.value)
+              }
+              rows={4}
+              placeholder={
+                'https://example.com/img1.jpg\nhttps://example.com/img2.jpg'
+              }
+              className={`${inputClass} resize-none font-mono text-xs`}
+            />
+
+            <p className="mt-1 text-xs text-slate-400">
+              1行に1つ入力してください。先頭の画像がメイン画像になります。
+            </p>
+          </details>
         </div>
 
         {/* Amazon affiliate URL — full width */}
