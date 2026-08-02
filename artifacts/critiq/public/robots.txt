@@ -5,4 +5,4 @@ Disallow: /admin/
 Disallow: /login
 Disallow: /register
 
-Sitemap: https://critiq-web.replit.app/sitemap.xml
+Sitemap: https://critiq-web-critiq.vercel.app/sitemap.xml
