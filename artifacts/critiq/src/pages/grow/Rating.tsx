@@ -137,11 +137,7 @@ function InlineRatingForm({
 function ProductRow({
   product,
   catName,
-  criteria,
-  expandedId,
   doneIds,
-  onToggle,
-  onDone,
 }: {
   product: ApiProduct;
   catName: string;
@@ -151,25 +147,48 @@ function ProductRow({
   onToggle: (id: number) => void;
   onDone: (id: number) => void;
 }) {
-  const isExpanded = expandedId === product.id;
   const isDone = doneIds.has(product.id);
+
   return (
-    <div className={`overflow-hidden rounded-2xl border bg-white shadow-sm transition ${isExpanded ? 'border-[#315c4c]' : 'border-[#dce5df]'}`}>
+    <div className="overflow-hidden rounded-2xl border border-[#dce5df] bg-white shadow-sm transition hover:border-[#315c4c]">
       <Link
         href={`/grow/rating/${product.id}`}
-        className="flex w-full items-center gap-4 px-4 py-3 text-left transition hover:bg-[#f1f6f3]">
-        {product.images[0] && <img src={product.images[0]} alt="" className="h-14 w-14 shrink-0 rounded-xl object-cover" />}
+        className="flex w-full items-center gap-4 px-4 py-3 text-left transition hover:bg-[#f1f6f3]"
+      >
+        {product.images[0] ? (
+          <img
+            src={product.images[0]}
+            alt={product.name}
+            className="h-14 w-14 shrink-0 rounded-xl object-cover"
+          />
+        ) : (
+          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-[#edf1ed] text-xl">
+            📦
+          </div>
+        )}
+
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold text-[#315c4c]">{catName}</p>
-          <p className="mt-0.5 font-bold text-[#1f2a25]">{product.name}</p>
-          <p className="mt-0.5 text-xs text-slate-400">{product.brand}{product.modelNumber ? ` · ${product.modelNumber}` : ''}</p>
+          <p className="text-xs font-semibold text-[#315c4c]">
+            {catName}
+          </p>
+          <p className="mt-0.5 truncate font-bold text-[#1f2a25]">
+            {product.name}
+          </p>
+          <p className="mt-0.5 truncate text-xs text-slate-400">
+            {product.brand}
+            {product.modelNumber ? ` · ${product.modelNumber}` : ''}
+          </p>
         </div>
+
         {isDone ? (
           <span className="shrink-0 text-xs font-bold text-[#315c4c]">
             ✓ 評価済み
           </span>
         ) : (
-          <span className="shrink-0 text-lg text-[#315c4c]" aria-hidden="true">
+          <span
+            className="shrink-0 text-lg text-[#315c4c]"
+            aria-hidden="true"
+          >
             →
           </span>
         )}
