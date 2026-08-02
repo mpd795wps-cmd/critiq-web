@@ -54,8 +54,24 @@ router.post(
     } catch (error) {
       console.error("Image upload failed:", error);
 
+      const details =
+        error instanceof Error
+          ? {
+              name: error.name,
+              message: error.message,
+              code:
+                "code" in error &&
+                typeof error.code === "string"
+                  ? error.code
+                  : undefined,
+            }
+          : {
+              message: String(error),
+            };
+
       res.status(500).json({
         error: "画像のアップロードに失敗しました",
+        details,
       });
     }
   },
