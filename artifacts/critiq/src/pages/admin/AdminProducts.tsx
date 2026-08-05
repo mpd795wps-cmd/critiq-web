@@ -82,6 +82,7 @@ function AiRatingsModal({
   });
 
   const [drafts, setDrafts] = useState<AiRatingDraft[]>([]);
+  const [bulkInput, setBulkInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [message, setMessage] = useState('');
@@ -121,6 +122,73 @@ function AiRatingsModal({
           : draft,
       ),
     );
+  }
+
+  function applyBulkInput() {
+    const lines = bulkInput
+      .split('\n')
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    if (lines.length === 0) {
+      setMessage('貼り付けるAI評価を入力してください');
+      return;
+    }
+
+    const nextDrafts = drafts.map((draft) => ({ ...draft }));
+
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index];
+
+      const target = nextDrafts.find(
+        (draft) =>
+          line.includes(draft.criterionName) ||
+          draft.criterionName.includes(line),
+      );
+
+      if (!target) continue;
+
+      const scoreMatch =
+        line.match(/([1-5](?:\.5)?)\s*(?:\/\s*5)?/) ??
+        lines[index + 1]?.match(/([1-5](?:\.5)?)\s*(?:\/\s*5)?/);
+
+      if (scoreMatch) {
+        target.score = Number(scoreMatch[1]);
+      }
+
+      const reasonLines: string[] = [];
+
+      for (let nextIndex = index + 1; nextIndex < lines.length; nextIndex += 1) {
+        const nextLine = lines[nextIndex];
+
+        const startsAnotherCriterion = nextDrafts.some(
+          (draft) =>
+            nextLine.includes(draft.criterionName) ||
+            draft.criterionName.includes(nextLine),
+        );
+
+        if (startsAnotherCriterion) break;
+
+        if (
+          !/^理由[:：]?$/.test(nextLine) &&
+          !/^星評価[:：]?$/.test(nextLine) &&
+          !/^評価[:：]?$/.test(nextLine) &&
+          !/^[★☆]+$/.test(nextLine) &&
+          !/^([1-5](?:\.5)?)\s*(?:\/\s*5)?$/.test(nextLine)
+        ) {
+          reasonLines.push(
+            nextLine.replace(/^理由[:：]\s*/, ''),
+          );
+        }
+      }
+
+      if (reasonLines.length > 0) {
+        target.reason = reasonLines.join(' ');
+      }
+    }
+
+    setDrafts(nextDrafts);
+    setMessage('✓ 貼り付け内容を入力欄へ反映しました');
   }
 
   async function handleSave() {
@@ -226,6 +294,57 @@ function AiRatingsModal({
           >
             ×
           </button>
+        </div>
+
+        <div className="border-b border-[#dce5df] bg-[#f8faf8] px-6 py-5">
+          <p className="text-sm font-bold text-[#315c4c]">
+            ChatGPTの評価を一括貼り付け
+          </p>
+          <p className="mt-1 text-xs text-[#68746e]">
+            基準名・星評価・理由をまとめて貼り付けてください。
+          </p>
+
+          <textarea
+            rows={10}
+            value={bulkInput}
+            onChange={(event) => {
+              setBulkInput(event.target.value);
+              setMessage('');
+            }}
+            placeholder={`例：
+
+口臭除去の効果
+4.5
+口臭ケアを主目的とした商品で、使用後の爽快感や持続性が評価されているため。
+
+刺激の少なさ
+4.0
+アルコールフリーで比較的刺激が少ない一方、ミント感には個人差があるため。`}
+            className="mt-3 w-full resize-y rounded-xl border border-[#dce5df] bg-white px-3 py-2 text-sm outline-none focus:border-[#315c4c]"
+          />
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              type="button"
+              onClick={applyBulkInput}
+              disabled={loading || drafts.length === 0 || !bulkInput.trim()}
+              className="rounded-xl bg-violet-600 px-4 py-2 text-sm font-bold text-white transition hover:bg-violet-700 disabled:opacity-50"
+            >
+              貼り付け内容を反映
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setBulkInput('');
+                setMessage('');
+              }}
+              disabled={!bulkInput}
+              className="rounded-xl border border-[#dce5df] bg-white px-4 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-100 disabled:opacity-50"
+            >
+              貼り付け欄をクリア
+            </button>
+          </div>
         </div>
 
         <div className="px-6 py-5">
