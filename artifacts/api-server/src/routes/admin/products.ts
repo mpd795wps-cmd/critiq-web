@@ -1,5 +1,12 @@
 import { Router } from "express";
-import { db, productsTable, productImagesTable, productRatingsTable, criteriaTable } from "@workspace/db";
+import {
+  db,
+  productsTable,
+  productImagesTable,
+  productRatingsTable,
+  productAiRatingsTable,
+  criteriaTable,
+} from "@workspace/db";
 import { eq, asc, desc, and, SQL } from "drizzle-orm";
 import { requireAdmin } from "../../lib/adminAuth.js";
 
@@ -112,6 +119,220 @@ router.delete("/admin/products/:id", async (req, res): Promise<void> => {
 });
 
 // GET /admin/products/:id/ratings — 基準別評価一覧
+// GET /admin/products/:id/ai-ratings — AI評価一覧
+router.get("/admin/products/:id/ai-ratings", async (req, res): Promise<void> => {
+  const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
+  if (isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+
+  const rows = await db
+    .select({
+      id: productAiRatingsTable.id,
+      productId: productAiRatingsTable.productId,
+      criterionId: productAiRatingsTable.criterionId,
+      criterionName: criteriaTable.name,
+      score: productAiRatingsTable.score,
+      reason: productAiRatingsTable.reason,
+      status: productAiRatingsTable.status,
+      published: productAiRatingsTable.published,
+      aiModel: productAiRatingsTable.aiModel,
+      generatedAt: productAiRatingsTable.generatedAt,
+      approvedAt: productAiRatingsTable.approvedAt,
+      createdAt: productAiRatingsTable.createdAt,
+      updatedAt: productAiRatingsTable.updatedAt,
+    })
+    .from(productAiRatingsTable)
+    .leftJoin(
+      criteriaTable,
+      eq(productAiRatingsTable.criterionId, criteriaTable.id),
+    )
+    .where(eq(productAiRatingsTable.productId, id))
+    .orderBy(asc(criteriaTable.sortOrder));
+
+  res.json(rows);
+});
+
+// PUT /admin/products/:id/ai-ratings — AI評価を下書き保存
+router.put("/admin/products/:id/ai-ratings", async (req, res): Promise<void> => {
+  const productId = parseInt(
+    Array.isArray(req.params.id) ? req.params.id[0] : req.params.id,
+    10,
+  );
+
+  if (isNaN(productId)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+
+  const { ratings } = req.body as {
+    ratings?: Array<{
+      criterionId?: unknown;
+      score?: unknown;
+      reason?: unknown;
+    }>;
+  };
+
+  if (!Array.isArray(ratings) || ratings.length === 0) {
+    res.status(400).json({ error: "ratings は1件以上必要です" });
+    return;
+  }
+
+  const normalized = ratings.map((rating) => ({
+    criterionId:
+      typeof rating.criterionId === "number" ? rating.criterionId : NaN,
+    score:
+      typeof rating.score === "number" ? rating.score : NaN,
+    reason:
+      typeof rating.reason === "string" ? rating.reason.trim() : "",
+  }));
+
+  const invalid = normalized.find(
+    (rating) =>
+      !Number.isInteger(rating.criterionId) ||
+      rating.criterionId <= 0 ||
+      !Number.isFinite(rating.score) ||
+      rating.score < 1 ||
+      rating.score > 5 ||
+      Math.round(rating.score * 2) !== rating.score * 2 ||
+      !rating.reason,
+  );
+
+  if (invalid) {
+    res.status(400).json({
+      error:
+        "criterionId、1〜5の0.5刻みのscore、空でないreasonを指定してください",
+    });
+    return;
+  }
+
+  const [product] = await db
+    .select({ id: productsTable.id, categoryId: productsTable.categoryId })
+    .from(productsTable)
+    .where(eq(productsTable.id, productId))
+    .limit(1);
+
+  if (!product) {
+    res.status(404).json({ error: "Product not found" });
+    return;
+  }
+
+  const criterionIds = normalized.map((rating) => rating.criterionId);
+  const validCriteria = await db
+    .select({ id: criteriaTable.id })
+    .from(criteriaTable)
+    .where(
+      and(
+        eq(criteriaTable.categoryId, product.categoryId),
+        eq(criteriaTable.status, "active"),
+      ),
+    );
+
+  const validCriterionIds = new Set(validCriteria.map((criterion) => criterion.id));
+  const unrelatedCriterion = criterionIds.find(
+    (criterionId) => !validCriterionIds.has(criterionId),
+  );
+
+  if (unrelatedCriterion !== undefined) {
+    res.status(400).json({
+      error: `基準ID ${unrelatedCriterion} は商品のカテゴリに属していません`,
+    });
+    return;
+  }
+
+  await db.transaction(async (tx) => {
+    for (const rating of normalized) {
+      await tx
+        .insert(productAiRatingsTable)
+        .values({
+          productId,
+          criterionId: rating.criterionId,
+          score: rating.score.toFixed(2),
+          reason: rating.reason,
+          status: "draft",
+          published: false,
+        })
+        .onConflictDoUpdate({
+          target: [
+            productAiRatingsTable.productId,
+            productAiRatingsTable.criterionId,
+          ],
+          set: {
+            score: rating.score.toFixed(2),
+            reason: rating.reason,
+            status: "draft",
+            published: false,
+            approvedAt: null,
+          },
+        });
+    }
+  });
+
+  res.json({ ok: true, saved: normalized.length });
+});
+
+// POST /admin/products/:id/ai-ratings/publish — AI評価を公開
+router.post(
+  "/admin/products/:id/ai-ratings/publish",
+  async (req, res): Promise<void> => {
+    const productId = parseInt(
+      Array.isArray(req.params.id) ? req.params.id[0] : req.params.id,
+      10,
+    );
+
+    if (isNaN(productId)) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+
+    const rows = await db
+      .update(productAiRatingsTable)
+      .set({
+        status: "published",
+        published: true,
+        approvedAt: new Date(),
+      })
+      .where(eq(productAiRatingsTable.productId, productId))
+      .returning({ id: productAiRatingsTable.id });
+
+    if (rows.length === 0) {
+      res.status(400).json({ error: "公開できるAI評価がありません" });
+      return;
+    }
+
+    res.json({ ok: true, published: rows.length });
+  },
+);
+
+// POST /admin/products/:id/ai-ratings/unpublish — AI評価を非公開
+router.post(
+  "/admin/products/:id/ai-ratings/unpublish",
+  async (req, res): Promise<void> => {
+    const productId = parseInt(
+      Array.isArray(req.params.id) ? req.params.id[0] : req.params.id,
+      10,
+    );
+
+    if (isNaN(productId)) {
+      res.status(400).json({ error: "Invalid id" });
+      return;
+    }
+
+    const rows = await db
+      .update(productAiRatingsTable)
+      .set({
+        status: "draft",
+        published: false,
+        approvedAt: null,
+      })
+      .where(eq(productAiRatingsTable.productId, productId))
+      .returning({ id: productAiRatingsTable.id });
+
+    res.json({ ok: true, unpublished: rows.length });
+  },
+);
+
 router.get("/admin/products/:id/ratings", async (req, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
