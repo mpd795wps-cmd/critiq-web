@@ -179,6 +179,46 @@ export const api = {
         get<{ criterionId: number; criterionName: string | null; score: number; count: number }[]>(
           `/admin/products/${id}/ratings`,
         ),
+
+      aiRatings: (id: number) =>
+        get<{
+          id: number;
+          productId: number;
+          criterionId: number;
+          criterionName: string | null;
+          score: string;
+          reason: string;
+          status: 'draft' | 'pending' | 'published';
+          published: boolean;
+          aiModel: string | null;
+          generatedAt: string | null;
+          approvedAt: string | null;
+          createdAt: string;
+          updatedAt: string;
+        }[]>(`/admin/products/${id}/ai-ratings`),
+
+      saveAiRatings: (
+        id: number,
+        ratings: Array<{
+          criterionId: number;
+          score: number;
+          reason: string;
+        }>,
+      ) =>
+        put<{ ok: boolean; saved: number }>(
+          `/admin/products/${id}/ai-ratings`,
+          { ratings },
+        ),
+
+      publishAiRatings: (id: number) =>
+        post<{ ok: boolean; published: number }>(
+          `/admin/products/${id}/ai-ratings/publish`,
+        ),
+
+      unpublishAiRatings: (id: number) =>
+        post<{ ok: boolean; unpublished: number }>(
+          `/admin/products/${id}/ai-ratings/unpublish`,
+        ),
     },
 
     criterionSuggestions: {
