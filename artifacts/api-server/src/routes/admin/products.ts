@@ -1,5 +1,12 @@
 import { Router } from "express";
-import { db, productsTable, productImagesTable, productRatingsTable, criteriaTable } from "@workspace/db";
+import {
+  db,
+  productsTable,
+  productImagesTable,
+  productRatingsTable,
+  productAiRatingsTable,
+  criteriaTable,
+} from "@workspace/db";
 import { eq, asc, desc, and, SQL } from "drizzle-orm";
 import { requireAdmin } from "../../lib/adminAuth.js";
 
@@ -112,6 +119,21 @@ router.delete("/admin/products/:id", async (req, res): Promise<void> => {
 });
 
 // GET /admin/products/:id/ratings — 基準別評価一覧
+router.get("/admin/products/:id/ai-ratings", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+
+  if (Number.isNaN(id)) {
+    res.status(400).json({ error: "Invalid id" });
+    return;
+  }
+
+  const rows = await db
+    .select()
+    .from(productAiRatingsTable)
+    .where(eq(productAiRatingsTable.productId, id));
+
+  res.json(rows);
+});
 router.get("/admin/products/:id/ratings", async (req, res): Promise<void> => {
   const id = parseInt(Array.isArray(req.params.id) ? req.params.id[0] : req.params.id, 10);
   if (isNaN(id)) { res.status(400).json({ error: "Invalid id" }); return; }
