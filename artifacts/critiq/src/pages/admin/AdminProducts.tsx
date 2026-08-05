@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, Fragment, type ChangeEvent } from 'react';
+import { useState, useRef, useCallback, useEffect, Fragment, type ChangeEvent } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import AdminLayout from './AdminLayout';
 import { api } from '@/lib/api';
@@ -48,6 +48,303 @@ function RatingsPanel({ productId, productName }: { productId: number; productNa
         )}
       </td>
     </tr>
+  );
+}
+
+
+type AiRatingDraft = {
+  criterionId: number;
+  criterionName: string;
+  score: number;
+  reason: string;
+};
+
+function AiRatingsModal({
+  product,
+  onClose,
+}: {
+  product: AdminProductItem;
+  onClose: () => void;
+}) {
+  const qc = useQueryClient();
+
+  const { data: criteria = [], isLoading: criteriaLoading } = useQuery({
+    queryKey: ['admin-criteria', product.categoryId],
+    queryFn: () => api.admin.criteria.list(product.categoryId),
+  });
+
+  const {
+    data: savedRatings = [],
+    isLoading: ratingsLoading,
+  } = useQuery({
+    queryKey: ['admin-product-ai-ratings', product.id],
+    queryFn: () => api.admin.products.aiRatings(product.id),
+  });
+
+  const [drafts, setDrafts] = useState<AiRatingDraft[]>([]);
+  const [saving, setSaving] = useState(false);
+  const [publishing, setPublishing] = useState(false);
+  const [message, setMessage] = useState('');
+
+  useEffect(() => {
+    if (criteriaLoading || ratingsLoading) return;
+
+    const ratingMap = new Map(
+      savedRatings.map((rating) => [rating.criterionId, rating]),
+    );
+
+    setDrafts(
+      criteria.map((criterion) => {
+        const saved = ratingMap.get(criterion.id);
+
+        return {
+          criterionId: criterion.id,
+          criterionName: criterion.name,
+          score: saved ? Number(saved.score) : 3,
+          reason: saved?.reason ?? '',
+        };
+      }),
+    );
+  }, [criteria, savedRatings, criteriaLoading, ratingsLoading]);
+
+  const isPublished = savedRatings.some((rating) => rating.published);
+
+  function updateDraft(
+    criterionId: number,
+    field: 'score' | 'reason',
+    value: number | string,
+  ) {
+    setDrafts((current) =>
+      current.map((draft) =>
+        draft.criterionId === criterionId
+          ? { ...draft, [field]: value }
+          : draft,
+      ),
+    );
+  }
+
+  async function handleSave() {
+    const invalid = drafts.find((draft) => !draft.reason.trim());
+
+    if (invalid) {
+      setMessage(`「${invalid.criterionName}」の評価理由を入力してください`);
+      return;
+    }
+
+    setSaving(true);
+    setMessage('');
+
+    try {
+      await api.admin.products.saveAiRatings(
+        product.id,
+        drafts.map((draft) => ({
+          criterionId: draft.criterionId,
+          score: draft.score,
+          reason: draft.reason.trim(),
+        })),
+      );
+
+      await qc.invalidateQueries({
+        queryKey: ['admin-product-ai-ratings', product.id],
+      });
+
+      setMessage('✓ AI評価を下書き保存しました');
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'AI評価の保存に失敗しました',
+      );
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handlePublish() {
+    setPublishing(true);
+    setMessage('');
+
+    try {
+      await api.admin.products.publishAiRatings(product.id);
+
+      await qc.invalidateQueries({
+        queryKey: ['admin-product-ai-ratings', product.id],
+      });
+
+      setMessage('✓ AI評価を公開しました');
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'AI評価の公開に失敗しました',
+      );
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  async function handleUnpublish() {
+    setPublishing(true);
+    setMessage('');
+
+    try {
+      await api.admin.products.unpublishAiRatings(product.id);
+
+      await qc.invalidateQueries({
+        queryKey: ['admin-product-ai-ratings', product.id],
+      });
+
+      setMessage('✓ AI評価を非公開にしました');
+    } catch (error) {
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : 'AI評価の非公開に失敗しました',
+      );
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  const loading = criteriaLoading || ratingsLoading;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="max-h-[90vh] w-full max-w-3xl overflow-y-auto rounded-2xl bg-white shadow-xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#dce5df] bg-white px-6 py-4">
+          <div>
+            <h2 className="font-bold text-[#1f2a25]">🤖 AI評価</h2>
+            <p className="mt-0.5 text-xs text-[#68746e]">
+              {product.brand}・{product.name}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="text-2xl leading-none text-[#68746e] hover:text-[#1f2a25]"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="px-6 py-5">
+          {loading ? (
+            <p className="py-8 text-center text-sm text-[#68746e]">
+              読み込み中…
+            </p>
+          ) : drafts.length === 0 ? (
+            <p className="py-8 text-center text-sm text-[#68746e]">
+              このカテゴリには評価基準がありません。
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {drafts.map((draft) => (
+                <div
+                  key={draft.criterionId}
+                  className="rounded-xl border border-[#dce5df] p-4"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <p className="font-bold text-[#1f2a25]">
+                      {draft.criterionName}
+                    </p>
+
+                    <select
+                      value={draft.score}
+                      onChange={(event) =>
+                        updateDraft(
+                          draft.criterionId,
+                          'score',
+                          Number(event.target.value),
+                        )
+                      }
+                      className="rounded-lg border border-[#dce5df] bg-white px-3 py-2 text-sm font-bold text-[#315c4c] outline-none focus:border-[#315c4c]"
+                    >
+                      {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5].map(
+                        (score) => (
+                          <option key={score} value={score}>
+                            ★ {score.toFixed(1)}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </div>
+
+                  <label className="mt-3 block text-xs font-bold text-[#68746e]">
+                    AI評価の理由
+                  </label>
+
+                  <textarea
+                    rows={3}
+                    value={draft.reason}
+                    onChange={(event) =>
+                      updateDraft(
+                        draft.criterionId,
+                        'reason',
+                        event.target.value,
+                      )
+                    }
+                    placeholder="この評価にした理由を入力してください"
+                    className="mt-1 w-full resize-y rounded-xl border border-[#dce5df] px-3 py-2 text-sm outline-none focus:border-[#315c4c]"
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+
+          {message && (
+            <p
+              className={`mt-4 text-sm ${
+                message.startsWith('✓')
+                  ? 'text-emerald-600'
+                  : 'text-red-600'
+              }`}
+            >
+              {message}
+            </p>
+          )}
+        </div>
+
+        <div className="sticky bottom-0 flex flex-wrap justify-end gap-2 border-t border-[#dce5df] bg-white px-6 py-4">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={loading || saving || drafts.length === 0}
+            className="rounded-xl border border-[#315c4c] px-4 py-2 text-sm font-bold text-[#315c4c] transition hover:bg-[#f1f6f3] disabled:opacity-50"
+          >
+            {saving ? '保存中…' : '下書き保存'}
+          </button>
+
+          {isPublished ? (
+            <button
+              type="button"
+              onClick={handleUnpublish}
+              disabled={publishing}
+              className="rounded-xl bg-amber-100 px-4 py-2 text-sm font-bold text-amber-700 transition hover:bg-amber-200 disabled:opacity-50"
+            >
+              {publishing ? '処理中…' : '非公開にする'}
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={handlePublish}
+              disabled={publishing || savedRatings.length === 0}
+              className="rounded-xl bg-[#315c4c] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#284b3f] disabled:opacity-50"
+            >
+              {publishing ? '処理中…' : '承認して公開'}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-bold text-slate-600 hover:bg-slate-200"
+          >
+            閉じる
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -528,6 +825,10 @@ export default function AdminProducts() {
   // Ratings panel state
   const [ratingsProductId, setRatingsProductId] = useState<number | null>(null);
 
+  // AI ratings modal state
+  const [aiRatingsProduct, setAiRatingsProduct] =
+    useState<AdminProductItem | null>(null);
+
   // Form state
   const [mode, setMode] = useState<'none' | 'add' | 'edit'>('none');
   const [editTarget, setEditTarget] = useState<AdminProductItem | null>(null);
@@ -708,6 +1009,12 @@ export default function AdminProducts() {
                             className={`rounded-lg px-2 py-1 text-xs font-bold transition ${ratingsOpen ? 'bg-[#315c4c] text-white' : 'bg-[#e8f0eb] text-[#315c4c] hover:bg-[#d5e5da]'}`}>
                             評価 {p.reviewCount > 0 ? `(${p.reviewCount})` : ''}▾
                           </button>
+                          <button
+                            onClick={() => setAiRatingsProduct(p)}
+                            className="rounded-lg bg-violet-50 px-2 py-1 text-xs font-bold text-violet-700 transition hover:bg-violet-100"
+                          >
+                            🤖 AI評価
+                          </button>
                           <button onClick={() => openEdit(p)}
                             className="rounded-lg bg-slate-50 px-2 py-1 text-xs font-bold text-slate-600 transition hover:bg-slate-100">
                             編集
@@ -741,6 +1048,13 @@ export default function AdminProducts() {
           </table>
         )}
       </div>
+
+      {aiRatingsProduct && (
+        <AiRatingsModal
+          product={aiRatingsProduct}
+          onClose={() => setAiRatingsProduct(null)}
+        />
+      )}
     </AdminLayout>
   );
 }
