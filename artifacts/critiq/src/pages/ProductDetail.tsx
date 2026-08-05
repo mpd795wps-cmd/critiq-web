@@ -182,6 +182,7 @@ export default function ProductDetail() {
       : 0;
 
   const sortedRatings = [...product.ratings].sort((a, b) => b.score - a.score);
+  const aiRatings = product.aiRatings ?? [];
   const hasMore = sortedRatings.length > RATINGS_LIMIT;
   const visibleRatings = showAllRatings ? sortedRatings : sortedRatings.slice(0, RATINGS_LIMIT);
 
@@ -262,7 +263,7 @@ export default function ProductDetail() {
         </div>
 
         {/* AI ratings */}
-        {product.aiRatings.length > 0 && (
+        {aiRatings.length > 0 && (
           <div className="mt-4 px-5">
             <div className="rounded-2xl border border-violet-200 bg-white p-5">
               <div className="flex items-center justify-between gap-3">
@@ -277,17 +278,17 @@ export default function ProductDetail() {
 
                 <div className="rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700">
                   {(
-                    product.aiRatings.reduce(
+                    aiRatings.reduce(
                       (sum, rating) => sum + rating.score,
                       0,
-                    ) / product.aiRatings.length
+                    ) / aiRatings.length
                   ).toFixed(1)}
                   /5.0
                 </div>
               </div>
 
               <ul className="mt-4 divide-y divide-slate-100">
-                {product.aiRatings.map((rating) => (
+                {aiRatings.map((rating) => (
                   <li key={rating.criterionId} className="py-4 first:pt-0 last:pb-0">
                     <div className="flex items-start justify-between gap-3">
                       <p className="text-sm font-bold text-slate-800">

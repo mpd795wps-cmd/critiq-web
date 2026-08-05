@@ -47,7 +47,7 @@ export type ApiProduct = {
   reviewCount: number;
   images: string[];
   ratings: ApiRatingEntry[];
-  aiRatings: ApiAiRatingEntry[];
+  aiRatings?: ApiAiRatingEntry[];
   amazonAffiliateUrl: string | null;
   asin: string | null;
 };
