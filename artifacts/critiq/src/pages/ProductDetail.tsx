@@ -261,6 +261,61 @@ export default function ProductDetail() {
           </Link>
         </div>
 
+        {/* AI ratings */}
+        {product.aiRatings.length > 0 && (
+          <div className="mt-4 px-5">
+            <div className="rounded-2xl border border-violet-200 bg-white p-5">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h2 className="text-sm font-bold text-slate-900">
+                    🤖 AI評価
+                  </h2>
+                  <p className="mt-1 text-xs text-slate-500">
+                    公開情報をもとに作成した参考評価です。
+                  </p>
+                </div>
+
+                <div className="rounded-full bg-violet-50 px-3 py-1 text-xs font-bold text-violet-700">
+                  {(
+                    product.aiRatings.reduce(
+                      (sum, rating) => sum + rating.score,
+                      0,
+                    ) / product.aiRatings.length
+                  ).toFixed(1)}
+                  /5.0
+                </div>
+              </div>
+
+              <ul className="mt-4 divide-y divide-slate-100">
+                {product.aiRatings.map((rating) => (
+                  <li key={rating.criterionId} className="py-4 first:pt-0 last:pb-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="text-sm font-bold text-slate-800">
+                        {rating.criterionName ?? `基準 ${rating.criterionId}`}
+                      </p>
+
+                      <div className="flex shrink-0 items-center gap-2">
+                        <StarRating score={rating.score} />
+                        <span className="text-xs font-bold text-violet-700">
+                          {rating.score.toFixed(1)}
+                        </span>
+                      </div>
+                    </div>
+
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      {rating.reason}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+
+              <p className="mt-4 border-t border-slate-100 pt-3 text-[11px] leading-5 text-slate-400">
+                AI評価は参考情報です。使用感や効果には個人差があります。
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Criterion ratings */}
         {product.ratings.length > 0 && (
           <div className="mt-4 px-5 pb-4">

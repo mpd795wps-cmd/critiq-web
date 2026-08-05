@@ -27,6 +27,13 @@ export type ApiRatingEntry = {
   count: number;
 };
 
+export type ApiAiRatingEntry = {
+  criterionId: number;
+  criterionName: string | null;
+  score: number;
+  reason: string;
+};
+
 export type ApiProduct = {
   id: number;
   categoryId: number;
@@ -40,6 +47,7 @@ export type ApiProduct = {
   reviewCount: number;
   images: string[];
   ratings: ApiRatingEntry[];
+  aiRatings: ApiAiRatingEntry[];
   amazonAffiliateUrl: string | null;
   asin: string | null;
 };
