@@ -40,6 +40,26 @@ router.get("/products/:productId", async (req, res): Promise<void> => {
     .from(productRatingsTable)
     .where(eq(productRatingsTable.productId, id));
 
+  const aiRatings = await db
+    .select({
+      criterionId: productAiRatingsTable.criterionId,
+      criterionName: criteriaTable.name,
+      score: productAiRatingsTable.score,
+      reason: productAiRatingsTable.reason,
+    })
+    .from(productAiRatingsTable)
+    .leftJoin(
+      criteriaTable,
+      eq(productAiRatingsTable.criterionId, criteriaTable.id),
+    )
+    .where(
+      and(
+        eq(productAiRatingsTable.productId, id),
+        eq(productAiRatingsTable.published, true),
+      ),
+    )
+    .orderBy(asc(criteriaTable.sortOrder));
+
   res.json({
     id: product.id, categoryId: product.categoryId, name: product.name, brand: product.brand,
     modelNumber: product.modelNumber, janCode: product.janCode, price: product.price,
@@ -47,6 +67,12 @@ router.get("/products/:productId", async (req, res): Promise<void> => {
     images: images.map((i) => i.url),
     ratings: ratings.map((r) => ({
       criterionId: r.criterionId, score: parseFloat(String(r.score)), count: r.count,
+    })),
+    aiRatings: aiRatings.map((rating) => ({
+      criterionId: rating.criterionId,
+      criterionName: rating.criterionName,
+      score: parseFloat(String(rating.score)),
+      reason: rating.reason,
     })),
     amazonAffiliateUrl: product.amazonAffiliateUrl ?? null,
     asin: product.asin ?? null,
