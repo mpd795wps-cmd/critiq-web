@@ -3,32 +3,72 @@ import type { ApiProduct, ApiCriterion } from '@/types/api';
 export type MatchCriterion = {
   id: number;
   name: string;
-  score: number;        // 1-5 stars (0 = unrated)
-  points: number;       // star * 20, 0 if unrated
-  count: number;
+
+  userScore: number;
+  userPoints: number;
+  userCount: number;
+  hasUserRating: boolean;
+
+  aiScore: number;
+  aiPoints: number;
+  hasAiRating: boolean;
+
   isUnrated: boolean;
 };
 
 export type MatchResult = {
   percentage: number;
-  hasAnyRating: boolean;        // true if at least one selected criterion is rated
+  hasAnyRating: boolean;
+
+  userAveragePoints: number | null;
+  aiAveragePoints: number | null;
+  userWeight: number;
+  aiWeight: number;
+
   overallAverageScore: number;
+  aiAverageScore: number;
   reviewCount: number;
+
   matchedCriteria: MatchCriterion[];
   otherCriteria: MatchCriterion[];
 };
 
-// rated DESC → unrated at bottom
+function starToPoints(score: number): number {
+  return Math.round(score * 20);
+}
+
+function criterionSortScore(criterion: MatchCriterion): number {
+  if (criterion.hasUserRating && criterion.hasAiRating) {
+    return criterion.userScore * 0.7 + criterion.aiScore * 0.3;
+  }
+
+  if (criterion.hasUserRating) {
+    return criterion.userScore;
+  }
+
+  if (criterion.hasAiRating) {
+    return criterion.aiScore;
+  }
+
+  return 0;
+}
+
 function sortCriteria(list: MatchCriterion[]): MatchCriterion[] {
   return list.sort((a, b) => {
-    if (a.isUnrated !== b.isUnrated) return a.isUnrated ? 1 : -1;
-    return b.score - a.score;
+    if (a.isUnrated !== b.isUnrated) {
+      return a.isUnrated ? 1 : -1;
+    }
+
+    return criterionSortScore(b) - criterionSortScore(a);
   });
 }
 
-/** ★1=20点, ★2=40点, ★3=60点, ★4=80点, ★5=100点, 未評価=0点 */
-function starToPoints(score: number): number {
-  return Math.round(score) * 20;
+function average(values: number[]): number | null {
+  if (values.length === 0) {
+    return null;
+  }
+
+  return values.reduce((sum, value) => sum + value, 0) / values.length;
 }
 
 export function calculateMatch(
@@ -37,61 +77,134 @@ export function calculateMatch(
   selectedCriteriaIds: number[],
 ): MatchResult {
   const selectedSet = new Set(selectedCriteriaIds);
-  const ratingsMap = new Map(product.ratings.map((r) => [r.criterionId, r]));
 
-  // 選択済み基準（評価なしも含む・0点として計算）
+  const userRatingsMap = new Map(
+    product.ratings.map((rating) => [rating.criterionId, rating]),
+  );
+
+  const aiRatingsMap = new Map(
+    (product.aiRatings ?? []).map((rating) => [
+      rating.criterionId,
+      rating,
+    ]),
+  );
+
+  function createCriterion(id: number, name: string): MatchCriterion {
+    const userRating = userRatingsMap.get(id);
+    const aiRating = aiRatingsMap.get(id);
+
+    const userScore = userRating?.score ?? 0;
+    const aiScore = aiRating?.score ?? 0;
+
+    return {
+      id,
+      name,
+
+      userScore,
+      userPoints: userRating ? starToPoints(userScore) : 0,
+      userCount: userRating?.count ?? 0,
+      hasUserRating: Boolean(userRating),
+
+      aiScore,
+      aiPoints: aiRating ? starToPoints(aiScore) : 0,
+      hasAiRating: Boolean(aiRating),
+
+      isUnrated: !userRating && !aiRating,
+    };
+  }
+
   const matchedCriteria = sortCriteria(
     selectedCriteriaIds.map((id) => {
-      const criterion = criteria.find((c) => c.id === id);
-      const rating = ratingsMap.get(id);
-      const score = rating?.score ?? 0;
-      return {
+      const criterion = criteria.find((item) => item.id === id);
+
+      return createCriterion(
         id,
-        name: criterion?.name ?? `基準 ${id}`,
-        score,
-        points: rating ? starToPoints(score) : 0,
-        count: rating?.count ?? 0,
-        isUnrated: !rating,
-      };
+        criterion?.name ?? `基準 ${id}`,
+      );
     }),
   );
 
-  // その他基準：カテゴリの全アクティブ基準（選択外）
   const otherCriteria = sortCriteria(
     criteria
-      .filter((c) => !selectedSet.has(c.id))
-      .map((c) => {
-        const rating = ratingsMap.get(c.id);
-        const score = rating?.score ?? 0;
-        return {
-          id: c.id,
-          name: c.name,
-          score,
-          points: rating ? starToPoints(score) : 0,
-          count: rating?.count ?? 0,
-          isUnrated: !rating,
-        };
-      }),
+      .filter((criterion) => !selectedSet.has(criterion.id))
+      .map((criterion) =>
+        createCriterion(criterion.id, criterion.name),
+      ),
   );
 
-  // 一致率 = 選択した基準の点数合計 ÷ 選択した基準数
-  const totalPoints = matchedCriteria.reduce((sum, c) => sum + c.points, 0);
-  const percentage =
-    matchedCriteria.length > 0
-      ? Math.round(totalPoints / matchedCriteria.length)
-      : 0;
+  const userAveragePoints = average(
+    matchedCriteria
+      .filter((criterion) => criterion.hasUserRating)
+      .map((criterion) => criterion.userPoints),
+  );
 
-  const hasAnyRating = matchedCriteria.some((c) => !c.isUnrated);
+  const aiAveragePoints = average(
+    matchedCriteria
+      .filter((criterion) => criterion.hasAiRating)
+      .map((criterion) => criterion.aiPoints),
+  );
+
+  let percentage = 0;
+  let userWeight = 0;
+  let aiWeight = 0;
+
+  if (userAveragePoints !== null && aiAveragePoints !== null) {
+    userWeight = 0.7;
+    aiWeight = 0.3;
+    percentage = Math.round(
+      userAveragePoints * userWeight +
+      aiAveragePoints * aiWeight,
+    );
+  } else if (userAveragePoints !== null) {
+    userWeight = 1;
+    percentage = Math.round(userAveragePoints);
+  } else if (aiAveragePoints !== null) {
+    aiWeight = 1;
+    percentage = Math.round(aiAveragePoints);
+  }
 
   const overallAverageScore =
     product.ratings.length > 0
-      ? product.ratings.reduce((t, r) => t + r.score, 0) / product.ratings.length
+      ? product.ratings.reduce(
+          (sum, rating) => sum + rating.score,
+          0,
+        ) / product.ratings.length
+      : 0;
+
+  const aiRatings = product.aiRatings ?? [];
+
+  const aiAverageScore =
+    aiRatings.length > 0
+      ? aiRatings.reduce(
+          (sum, rating) => sum + rating.score,
+          0,
+        ) / aiRatings.length
       : 0;
 
   return {
     percentage,
-    hasAnyRating,
-    overallAverageScore: Math.round(overallAverageScore * 10) / 10,
+    hasAnyRating:
+      userAveragePoints !== null || aiAveragePoints !== null,
+
+    userAveragePoints:
+      userAveragePoints === null
+        ? null
+        : Math.round(userAveragePoints),
+
+    aiAveragePoints:
+      aiAveragePoints === null
+        ? null
+        : Math.round(aiAveragePoints),
+
+    userWeight,
+    aiWeight,
+
+    overallAverageScore:
+      Math.round(overallAverageScore * 10) / 10,
+
+    aiAverageScore:
+      Math.round(aiAverageScore * 10) / 10,
+
     reviewCount: product.reviewCount,
     matchedCriteria,
     otherCriteria,
