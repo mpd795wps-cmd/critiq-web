@@ -926,12 +926,462 @@ function ProductForm({
   );
 }
 
+
+type BulkProductDraft = {
+  rowNumber: number;
+  brand: string;
+  name: string;
+  price: number;
+  modelNumber: string;
+  description: string;
+};
+
+function parseBulkProducts(input: string): {
+  products: BulkProductDraft[];
+  errors: string[];
+} {
+  const products: BulkProductDraft[] = [];
+  const errors: string[] = [];
+  const duplicateKeys = new Set<string>();
+
+  const lines = input
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  lines.forEach((line, index) => {
+    const rowNumber = index + 1;
+    const delimiter = line.includes('\t') ? '\t' : '|';
+    const parts = line.split(delimiter).map((value) => value.trim());
+
+    if (
+      rowNumber === 1 &&
+      parts.some((value) => value.includes('ブランド')) &&
+      parts.some((value) => value.includes('商品名'))
+    ) {
+      return;
+    }
+
+    if (parts.length < 3) {
+      errors.push(
+        `${rowNumber}行目：ブランド・商品名・参考価格が必要です`,
+      );
+      return;
+    }
+
+    const [brand, name, priceText, modelNumber = '', ...descriptionParts] =
+      parts;
+
+    const normalizedPrice = priceText
+      .replace(/[¥￥,\s円]/g, '');
+
+    const price = Number(normalizedPrice);
+
+    if (!brand) {
+      errors.push(`${rowNumber}行目：ブランドが空です`);
+      return;
+    }
+
+    if (!name) {
+      errors.push(`${rowNumber}行目：商品名が空です`);
+      return;
+    }
+
+    if (
+      !Number.isInteger(price) ||
+      price < 0
+    ) {
+      errors.push(
+        `${rowNumber}行目：参考価格「${priceText}」が正しくありません`,
+      );
+      return;
+    }
+
+    const duplicateKey = [
+      brand.toLowerCase(),
+      name.toLowerCase(),
+      modelNumber.toLowerCase(),
+    ].join('::');
+
+    if (duplicateKeys.has(duplicateKey)) {
+      errors.push(
+        `${rowNumber}行目：同じ貼り付け内容内で商品が重複しています`,
+      );
+      return;
+    }
+
+    duplicateKeys.add(duplicateKey);
+
+    products.push({
+      rowNumber,
+      brand,
+      name,
+      price,
+      modelNumber,
+      description: descriptionParts.join(delimiter).trim(),
+    });
+  });
+
+  return { products, errors };
+}
+
+function BulkProductImportModal({
+  categories,
+  initialCategoryId,
+  onClose,
+  onCompleted,
+}: {
+  categories: Array<{ id: number; name: string }>;
+  initialCategoryId: string;
+  onClose: () => void;
+  onCompleted: () => Promise<void> | void;
+}) {
+  const [categoryId, setCategoryId] = useState(
+    initialCategoryId ||
+      (categories[0] ? String(categories[0].id) : ''),
+  );
+
+  const [status, setStatus] = useState<
+    'active' | 'pending'
+  >('active');
+
+  const [bulkInput, setBulkInput] = useState('');
+  const [registering, setRegistering] = useState(false);
+  const [progress, setProgress] = useState('');
+  const [resultMessage, setResultMessage] = useState('');
+
+  const parsed = parseBulkProducts(bulkInput);
+
+  async function handleRegister() {
+    if (!categoryId) {
+      setResultMessage('カテゴリを選択してください');
+      return;
+    }
+
+    if (parsed.products.length === 0) {
+      setResultMessage('登録できる商品がありません');
+      return;
+    }
+
+    if (parsed.errors.length > 0) {
+      setResultMessage(
+        '入力エラーを修正してから登録してください',
+      );
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `${parsed.products.length}件の商品を登録しますか？`,
+    );
+
+    if (!confirmed) return;
+
+    setRegistering(true);
+    setResultMessage('');
+
+    let successCount = 0;
+    const failedRows: string[] = [];
+
+    for (let index = 0; index < parsed.products.length; index += 1) {
+      const product = parsed.products[index];
+
+      setProgress(
+        `${index + 1} / ${parsed.products.length} 件を登録中`,
+      );
+
+      try {
+        await api.admin.products.create({
+          categoryId: Number(categoryId),
+          brand: product.brand,
+          name: product.name,
+          modelNumber: product.modelNumber,
+          janCode: undefined,
+          price: product.price,
+          description: product.description || undefined,
+          status,
+          images: [],
+          amazonAffiliateUrl: null,
+          asin: null,
+        });
+
+        successCount += 1;
+      } catch (error) {
+        failedRows.push(
+          `${product.rowNumber}行目「${product.name}」：${
+            error instanceof Error
+              ? error.message
+              : '登録に失敗しました'
+          }`,
+        );
+      }
+    }
+
+    await onCompleted();
+
+    setRegistering(false);
+    setProgress('');
+
+    if (failedRows.length === 0) {
+      setResultMessage(
+        `✓ ${successCount}件の商品を登録しました`,
+      );
+      setBulkInput('');
+      return;
+    }
+
+    setResultMessage(
+      `${successCount}件成功、${failedRows.length}件失敗\n${failedRows.join('\n')}`,
+    );
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="max-h-[92vh] w-full max-w-5xl overflow-y-auto rounded-2xl bg-white shadow-xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#dce5df] bg-white px-6 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-[#1f2a25]">
+              📥 商品を一括登録
+            </h2>
+            <p className="mt-1 text-xs text-[#68746e]">
+              画像は登録後に、各商品の編集画面から追加できます。
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={registering}
+            className="text-2xl leading-none text-[#68746e] hover:text-[#1f2a25] disabled:opacity-40"
+          >
+            ×
+          </button>
+        </div>
+
+        <div className="space-y-5 px-6 py-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <label className="block">
+              <span className="text-sm font-bold text-[#1f2a25]">
+                登録先カテゴリ
+              </span>
+
+              <select
+                value={categoryId}
+                onChange={(event) =>
+                  setCategoryId(event.target.value)
+                }
+                disabled={registering}
+                className="mt-2 w-full rounded-xl border border-[#dce5df] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#315c4c]"
+              >
+                <option value="">カテゴリを選択</option>
+
+                {categories.map((category) => (
+                  <option
+                    key={category.id}
+                    value={String(category.id)}
+                  >
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label className="block">
+              <span className="text-sm font-bold text-[#1f2a25]">
+                ステータス
+              </span>
+
+              <select
+                value={status}
+                onChange={(event) =>
+                  setStatus(
+                    event.target.value as 'active' | 'pending',
+                  )
+                }
+                disabled={registering}
+                className="mt-2 w-full rounded-xl border border-[#dce5df] bg-white px-3 py-2.5 text-sm outline-none focus:border-[#315c4c]"
+              >
+                <option value="active">公開中</option>
+                <option value="pending">保留中</option>
+              </select>
+            </label>
+          </div>
+
+          <div className="rounded-xl bg-[#f1f6f3] p-4">
+            <p className="text-sm font-bold text-[#315c4c]">
+              貼り付け形式
+            </p>
+
+            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-xs leading-6 text-[#52615a]">
+{`ブランド|商品名|参考価格|型番|商品説明
+DOD|カマボコテント3M|79800|T5-689-TN|5人用のトンネル型テント
+DOD|ワンポールテントM|22800|T5-47-TN|設営しやすいワンポールテント`}
+            </pre>
+
+            <p className="mt-2 text-xs text-[#68746e]">
+              「|」区切りまたはタブ区切りに対応しています。
+              型番と商品説明は空欄でも登録できます。
+            </p>
+          </div>
+
+          <label className="block">
+            <span className="text-sm font-bold text-[#1f2a25]">
+              商品データ
+            </span>
+
+            <textarea
+              rows={12}
+              value={bulkInput}
+              onChange={(event) => {
+                setBulkInput(event.target.value);
+                setResultMessage('');
+              }}
+              disabled={registering}
+              placeholder={`DOD|カマボコテント3M|79800|T5-689-TN|5人用のトンネル型テント
+DOD|カマボコテント3L|99800|T7-690-TN|大型のトンネル型テント`}
+              className="mt-2 w-full resize-y rounded-xl border border-[#dce5df] px-3 py-3 font-mono text-sm outline-none focus:border-[#315c4c]"
+            />
+          </label>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+              登録可能：{parsed.products.length}件
+            </span>
+
+            {parsed.errors.length > 0 && (
+              <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">
+                エラー：{parsed.errors.length}件
+              </span>
+            )}
+          </div>
+
+          {parsed.errors.length > 0 && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <p className="text-sm font-bold text-red-700">
+                入力エラー
+              </p>
+
+              <ul className="mt-2 space-y-1 text-xs text-red-600">
+                {parsed.errors.map((error) => (
+                  <li key={error}>・{error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {parsed.products.length > 0 && (
+            <div>
+              <p className="text-sm font-bold text-[#1f2a25]">
+                登録内容の確認
+              </p>
+
+              <div className="mt-2 overflow-x-auto rounded-xl border border-[#dce5df]">
+                <table className="w-full min-w-[760px] text-sm">
+                  <thead className="bg-[#f8faf8] text-left text-xs text-[#68746e]">
+                    <tr>
+                      <th className="px-3 py-2">行</th>
+                      <th className="px-3 py-2">ブランド</th>
+                      <th className="px-3 py-2">商品名</th>
+                      <th className="px-3 py-2">参考価格</th>
+                      <th className="px-3 py-2">型番</th>
+                      <th className="px-3 py-2">商品説明</th>
+                    </tr>
+                  </thead>
+
+                  <tbody>
+                    {parsed.products.slice(0, 100).map((product) => (
+                      <tr
+                        key={`${product.rowNumber}-${product.name}`}
+                        className="border-t border-[#dce5df]"
+                      >
+                        <td className="px-3 py-2 text-[#68746e]">
+                          {product.rowNumber}
+                        </td>
+                        <td className="px-3 py-2">
+                          {product.brand}
+                        </td>
+                        <td className="px-3 py-2 font-bold">
+                          {product.name}
+                        </td>
+                        <td className="px-3 py-2">
+                          ¥{product.price.toLocaleString('ja-JP')}
+                        </td>
+                        <td className="px-3 py-2">
+                          {product.modelNumber || '—'}
+                        </td>
+                        <td className="max-w-xs truncate px-3 py-2">
+                          {product.description || '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {parsed.products.length > 100 && (
+                <p className="mt-2 text-xs text-[#68746e]">
+                  プレビューは先頭100件まで表示しています。
+                </p>
+              )}
+            </div>
+          )}
+
+          {progress && (
+            <p className="text-sm font-bold text-[#315c4c]">
+              {progress}
+            </p>
+          )}
+
+          {resultMessage && (
+            <p
+              className={`whitespace-pre-wrap text-sm ${
+                resultMessage.startsWith('✓')
+                  ? 'text-emerald-600'
+                  : 'text-red-600'
+              }`}
+            >
+              {resultMessage}
+            </p>
+          )}
+        </div>
+
+        <div className="sticky bottom-0 flex flex-wrap justify-end gap-2 border-t border-[#dce5df] bg-white px-6 py-4">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={registering}
+            className="rounded-xl border border-[#dce5df] px-4 py-2 text-sm font-bold text-[#315c4c] hover:bg-[#f1f6f3] disabled:opacity-40"
+          >
+            閉じる
+          </button>
+
+          <button
+            type="button"
+            onClick={handleRegister}
+            disabled={
+              registering ||
+              !categoryId ||
+              parsed.products.length === 0 ||
+              parsed.errors.length > 0
+            }
+            className="rounded-xl bg-[#315c4c] px-5 py-2 text-sm font-bold text-white hover:bg-[#284b3f] disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {registering
+              ? '登録中…'
+              : `${parsed.products.length}件を登録`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main page ─────────────────────────────────────────────
 export default function AdminProducts() {
   const qc = useQueryClient();
   const { data: categories = [] } = useQuery({ queryKey: ['admin-categories'], queryFn: () => api.admin.categories.list() });
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCategoryId, setFilterCategoryId] = useState('');
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['admin-products', filterStatus, filterCategoryId],
@@ -1029,12 +1479,26 @@ export default function AdminProducts() {
 
   return (
     <AdminLayout>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-[#1f2a25]">商品管理</h1>
-        <button onClick={openAdd}
-          className="rounded-xl bg-[#315c4c] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#284b3f]">
-          + 商品を追加
-        </button>
+
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => setBulkImportOpen(true)}
+            className="rounded-xl border border-[#315c4c] bg-white px-4 py-2 text-sm font-bold text-[#315c4c] transition hover:bg-[#f1f6f3]"
+          >
+            📥 一括登録
+          </button>
+
+          <button
+            type="button"
+            onClick={openAdd}
+            className="rounded-xl bg-[#315c4c] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#284b3f]"
+          >
+            + 商品を追加
+          </button>
+        </div>
       </div>
 
       {/* Filters */}
@@ -1167,6 +1631,19 @@ export default function AdminProducts() {
           </table>
         )}
       </div>
+
+      {bulkImportOpen && (
+        <BulkProductImportModal
+          categories={categories}
+          initialCategoryId={filterCategoryId}
+          onClose={() => setBulkImportOpen(false)}
+          onCompleted={async () => {
+            await qc.invalidateQueries({
+              queryKey: ['admin-products'],
+            });
+          }}
+        />
+      )}
 
       {aiRatingsProduct && (
         <AiRatingsModal
