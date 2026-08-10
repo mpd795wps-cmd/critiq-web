@@ -1,7 +1,7 @@
 import type {
   ApiCategory, ApiCriterion, ApiProduct, AdminProductItem,
   CriterionSuggestionItem, ProductSuggestionItem, CategorySuggestionItem,
-  UserInfo, MySubmission,
+  UserInfo, MySubmission, TentDiagnosisAnswers, TentDiagnosisResult,
 } from '@/types/api';
 
 const BASE = '/api';
@@ -95,6 +95,10 @@ export const api = {
       get<{ id: number; criterionId: number; comment: string; createdAt: string }[]>(`/products/${productId}/comments`),
     myRating: (productId: number) =>
       get<{ ratings: Record<string, number> }>(`/products/${productId}/my-rating`),
+  },
+  diagnosis: {
+    tents: (answers: TentDiagnosisAnswers) =>
+      post<{ results: TentDiagnosisResult[]; totalEligible: number }>('/diagnosis/tents', answers),
   },
   upload: {
     image: async (file: File): Promise<string> => {
@@ -235,6 +239,10 @@ export const api = {
         post<{ ok: boolean; unpublished: number }>(
           `/admin/products/${id}/ai-ratings/unpublish`,
         ),
+      saveTentDiagnosisBulk: (entries: Array<{ productId: number; specs: Record<string, unknown>; diagnosis: Record<string, unknown> }>) =>
+        put<{ ok: boolean; saved: number }>('/admin/tent-diagnosis/bulk', { entries }),
+      tentDiagnosis: (id: number) =>
+        get<{ specs: Record<string, unknown> | null; diagnosis: Record<string, unknown> | null }>(`/admin/products/${id}/tent-diagnosis`),
     },
 
     criterionSuggestions: {
