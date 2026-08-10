@@ -18,7 +18,7 @@ function RatingsPanel({ productId, productName }: { productId: number; productNa
 
   return (
     <tr>
-      <td colSpan={5} className="bg-[#f1f6f3] px-6 py-4">
+      <td colSpan={6} className="bg-[#f1f6f3] px-6 py-4">
         <p className="mb-3 text-xs font-bold text-[#315c4c]">「{productName}」 — 基準別評価</p>
         {isLoading ? (
           <p className="text-xs text-[#68746e]">読み込み中…</p>
@@ -1375,6 +1375,272 @@ DOD|カマボコテント3L|99800|T7-690-TN|大型のトンネル型テント`}
   );
 }
 
+type ParsedBulkAiRating = {
+  productId: number;
+  productName: string;
+  criterionId: number;
+  criterionName: string;
+  score: number;
+  reason: string;
+  rowNumber: number;
+};
+
+function normalizeMatchText(value: string) {
+  return value
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[\s・･·()（）\[\]【】「」『』]/g, '');
+}
+
+function parseBulkAiRatings(
+  input: string,
+  products: AdminProductItem[],
+  criteria: Array<{ id: number; categoryId: number; name: string }>,
+) {
+  const entries: ParsedBulkAiRating[] = [];
+  const errors: string[] = [];
+  const seen = new Set<string>();
+
+  input.split('\n').forEach((rawLine, index) => {
+    const line = rawLine.trim();
+    if (!line) return;
+
+    const delimiter = line.includes('\t') ? '\t' : '|';
+    const columns = line.split(delimiter).map((value) => value.trim());
+    const rowNumber = index + 1;
+
+    if (
+      index === 0 &&
+      normalizeMatchText(columns[0] ?? '') === '商品名または型番'
+    ) {
+      return;
+    }
+
+    if (columns.length < 4) {
+      errors.push(`${rowNumber}行目：4項目を「|」またはタブで区切ってください`);
+      return;
+    }
+
+    const [productKey, criterionKey, rawScore, ...reasonParts] = columns;
+    const normalizedProductKey = normalizeMatchText(productKey);
+    const productMatches = products.filter((product) => {
+      const normalizedName = normalizeMatchText(product.name);
+      const normalizedModel = normalizeMatchText(product.modelNumber ?? '');
+      return (
+        normalizedName === normalizedProductKey ||
+        Boolean(normalizedModel && normalizedModel === normalizedProductKey)
+      );
+    });
+
+    if (productMatches.length !== 1) {
+      errors.push(
+        `${rowNumber}行目：商品「${productKey}」が${
+          productMatches.length === 0 ? '選択商品にありません' : '複数一致します'
+        }`,
+      );
+      return;
+    }
+
+    const product = productMatches[0];
+    const normalizedCriterionKey = normalizeMatchText(criterionKey);
+    const criterionMatches = criteria.filter(
+      (criterion) =>
+        criterion.categoryId === product.categoryId &&
+        normalizeMatchText(criterion.name) === normalizedCriterionKey,
+    );
+
+    if (criterionMatches.length !== 1) {
+      errors.push(
+        `${rowNumber}行目：「${product.name}」の基準「${criterionKey}」が見つかりません`,
+      );
+      return;
+    }
+
+    const scoreMatch = rawScore.match(/[1-5](?:\.5|\.0)?/);
+    const score = scoreMatch ? Number(scoreMatch[0]) : NaN;
+    if (
+      !Number.isFinite(score) ||
+      score < 1 ||
+      score > 5 ||
+      Math.round(score * 2) !== score * 2
+    ) {
+      errors.push(`${rowNumber}行目：評価は1〜5の0.5刻みで入力してください`);
+      return;
+    }
+
+    const reason = reasonParts.join(delimiter).trim();
+    if (!reason) {
+      errors.push(`${rowNumber}行目：評価理由を入力してください`);
+      return;
+    }
+
+    const criterion = criterionMatches[0];
+    const duplicateKey = `${product.id}:${criterion.id}`;
+    if (seen.has(duplicateKey)) {
+      errors.push(`${rowNumber}行目：「${product.name}／${criterion.name}」が重複しています`);
+      return;
+    }
+    seen.add(duplicateKey);
+
+    entries.push({
+      productId: product.id,
+      productName: product.name,
+      criterionId: criterion.id,
+      criterionName: criterion.name,
+      score,
+      reason,
+      rowNumber,
+    });
+  });
+
+  return { entries, errors };
+}
+
+function BulkAiRatingsModal({
+  products,
+  onClose,
+  onCompleted,
+}: {
+  products: AdminProductItem[];
+  onClose: () => void;
+  onCompleted: () => Promise<void> | void;
+}) {
+  const { data: criteria = [], isLoading: criteriaLoading } = useQuery({
+    queryKey: ['admin-criteria'],
+    queryFn: () => api.admin.criteria.list(),
+  });
+  const [bulkInput, setBulkInput] = useState('');
+  const [publish, setPublish] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const parsed = parseBulkAiRatings(bulkInput, products, criteria);
+  const coveredProductCount = new Set(
+    parsed.entries.map((entry) => entry.productId),
+  ).size;
+
+  async function handleSave() {
+    if (parsed.entries.length === 0 || parsed.errors.length > 0) return;
+
+    const confirmed = window.confirm(
+      `${coveredProductCount}商品・${parsed.entries.length}件のAI評価を${
+        publish ? '公開状態で' : '下書きとして'
+      }保存しますか？`,
+    );
+    if (!confirmed) return;
+
+    setSaving(true);
+    setMessage('');
+    try {
+      const result = await api.admin.products.saveAiRatingsBulk(
+        parsed.entries.map((entry) => ({
+          productId: entry.productId,
+          criterionId: entry.criterionId,
+          score: entry.score,
+          reason: entry.reason,
+        })),
+        publish,
+      );
+      await onCompleted();
+      setMessage(
+        `✓ ${result.products}商品・${result.saved}件のAI評価を保存しました`,
+      );
+      setBulkInput('');
+    } catch (error) {
+      setMessage(error instanceof Error ? error.message : '一括保存に失敗しました');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+      <div className="max-h-[92vh] w-full max-w-6xl overflow-y-auto rounded-2xl bg-white shadow-xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-[#dce5df] bg-white px-6 py-4">
+          <div>
+            <h2 className="text-lg font-bold text-[#1f2a25]">🤖 AI評価を一括登録</h2>
+            <p className="mt-1 text-xs text-[#68746e]">
+              選択した{products.length}商品へ、まとめてAI評価を保存します。
+            </p>
+          </div>
+          <button type="button" onClick={onClose} disabled={saving} className="text-2xl leading-none text-[#68746e] hover:text-[#1f2a25] disabled:opacity-40">×</button>
+        </div>
+
+        <div className="space-y-5 px-6 py-5">
+          <div className="rounded-xl bg-violet-50 p-4">
+            <p className="text-sm font-bold text-violet-800">貼り付け形式</p>
+            <pre className="mt-2 overflow-x-auto whitespace-pre-wrap text-xs leading-6 text-violet-700">
+{`商品名または型番|評価基準名|評価|評価理由
+ランドロック|収納・持ち運びやすさ|1.0|総重量24.5kgで車での運搬が前提です。
+ランドロック|設営のしやすさ|2.0|大型で複数人での設営が適しています。`}
+            </pre>
+            <p className="mt-2 text-xs text-violet-700">
+              ChatGPTへ選択商品とカテゴリの評価基準を渡し、この形式でまとめて出力させてください。星記号は不要です。
+            </p>
+          </div>
+
+          <details className="rounded-xl border border-[#dce5df] px-4 py-3">
+            <summary className="cursor-pointer text-sm font-bold text-[#315c4c]">対象商品を確認</summary>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {products.map((product) => (
+                <span key={product.id} className="rounded-full bg-[#f1f6f3] px-3 py-1 text-xs text-[#52615a]">
+                  {product.name}{product.modelNumber ? `（${product.modelNumber}）` : ''}
+                </span>
+              ))}
+            </div>
+          </details>
+
+          <label className="block">
+            <span className="text-sm font-bold text-[#1f2a25]">AI評価データ</span>
+            <textarea
+              rows={14}
+              value={bulkInput}
+              onChange={(event) => {
+                setBulkInput(event.target.value);
+                setMessage('');
+              }}
+              disabled={saving || criteriaLoading}
+              placeholder="商品名|評価基準名|評価|評価理由"
+              className="mt-2 w-full resize-y rounded-xl border border-[#dce5df] px-3 py-3 font-mono text-sm outline-none focus:border-violet-500"
+            />
+          </label>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-bold text-emerald-700">
+              保存可能：{coveredProductCount}商品・{parsed.entries.length}件
+            </span>
+            {parsed.errors.length > 0 && (
+              <span className="rounded-full bg-red-50 px-3 py-1 text-xs font-bold text-red-600">エラー：{parsed.errors.length}件</span>
+            )}
+          </div>
+
+          {parsed.errors.length > 0 && (
+            <div className="rounded-xl border border-red-200 bg-red-50 p-4">
+              <p className="text-sm font-bold text-red-700">入力エラー</p>
+              <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto text-xs text-red-600">
+                {parsed.errors.map((error) => <li key={error}>・{error}</li>)}
+              </ul>
+            </div>
+          )}
+
+          <label className="flex items-center gap-2 text-sm font-bold text-[#1f2a25]">
+            <input type="checkbox" checked={publish} onChange={(event) => setPublish(event.target.checked)} disabled={saving} className="h-4 w-4 accent-[#315c4c]" />
+            保存後すぐ公開する
+          </label>
+
+          {message && <p className="whitespace-pre-wrap rounded-xl bg-[#f1f6f3] px-4 py-3 text-sm font-bold text-[#315c4c]">{message}</p>}
+        </div>
+
+        <div className="sticky bottom-0 flex justify-end gap-3 border-t border-[#dce5df] bg-white px-6 py-4">
+          <button type="button" onClick={onClose} disabled={saving} className="rounded-xl border border-[#dce5df] px-5 py-2 text-sm font-bold text-[#52615a] disabled:opacity-40">閉じる</button>
+          <button type="button" onClick={handleSave} disabled={saving || criteriaLoading || parsed.entries.length === 0 || parsed.errors.length > 0} className="rounded-xl bg-violet-600 px-5 py-2 text-sm font-bold text-white hover:bg-violet-700 disabled:cursor-not-allowed disabled:opacity-50">
+            {saving ? '保存中…' : `${parsed.entries.length}件を保存`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main page ─────────────────────────────────────────────
 export default function AdminProducts() {
   const qc = useQueryClient();
@@ -1382,6 +1648,10 @@ export default function AdminProducts() {
   const [filterStatus, setFilterStatus] = useState('');
   const [filterCategoryId, setFilterCategoryId] = useState('');
   const [bulkImportOpen, setBulkImportOpen] = useState(false);
+  const [bulkAiRatingsOpen, setBulkAiRatingsOpen] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<number>>(
+    () => new Set(),
+  );
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['admin-products', filterStatus, filterCategoryId],
@@ -1390,6 +1660,34 @@ export default function AdminProducts() {
       categoryId: filterCategoryId ? parseInt(filterCategoryId, 10) : undefined,
     }),
   });
+
+  const selectedProducts = products.filter((product) =>
+    selectedProductIds.has(product.id),
+  );
+  const allVisibleSelected =
+    products.length > 0 &&
+    products.every((product) => selectedProductIds.has(product.id));
+
+  function toggleProductSelection(productId: number) {
+    setSelectedProductIds((current) => {
+      const next = new Set(current);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  }
+
+  function toggleAllVisibleProducts() {
+    setSelectedProductIds((current) => {
+      const next = new Set(current);
+      if (allVisibleSelected) {
+        products.forEach((product) => next.delete(product.id));
+      } else {
+        products.forEach((product) => next.add(product.id));
+      }
+      return next;
+    });
+  }
 
   // Ratings panel state
   const [ratingsProductId, setRatingsProductId] = useState<number | null>(null);
@@ -1485,6 +1783,15 @@ export default function AdminProducts() {
         <div className="flex flex-wrap gap-2">
           <button
             type="button"
+            onClick={() => setBulkAiRatingsOpen(true)}
+            disabled={selectedProducts.length === 0}
+            className="rounded-xl border border-violet-300 bg-violet-50 px-4 py-2 text-sm font-bold text-violet-700 transition hover:bg-violet-100 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            🤖 AI評価を一括登録（{selectedProducts.length}）
+          </button>
+
+          <button
+            type="button"
             onClick={() => setBulkImportOpen(true)}
             className="rounded-xl border border-[#315c4c] bg-white px-4 py-2 text-sm font-bold text-[#315c4c] transition hover:bg-[#f1f6f3]"
           >
@@ -1544,6 +1851,15 @@ export default function AdminProducts() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-[#dce5df] bg-[#f8faf8]">
+                <th className="w-10 px-4 py-3 text-left">
+                  <input
+                    type="checkbox"
+                    checked={allVisibleSelected}
+                    onChange={toggleAllVisibleProducts}
+                    aria-label="表示中の商品をすべて選択"
+                    className="h-4 w-4 accent-[#315c4c]"
+                  />
+                </th>
                 <th className="px-4 py-3 text-left font-bold text-[#68746e]">商品名</th>
                 <th className="hidden px-4 py-3 text-left font-bold text-[#68746e] sm:table-cell">カテゴリ</th>
                 <th className="hidden px-4 py-3 text-left font-bold text-[#68746e] md:table-cell">価格</th>
@@ -1562,6 +1878,15 @@ export default function AdminProducts() {
                         editTarget?.id === p.id ? 'bg-[#f1f6f3]' : ''
                       } ${isLast && !ratingsOpen ? 'border-b-0' : ''}`}
                     >
+                      <td className="px-4 py-3">
+                        <input
+                          type="checkbox"
+                          checked={selectedProductIds.has(p.id)}
+                          onChange={() => toggleProductSelection(p.id)}
+                          aria-label={`${p.name}を選択`}
+                          className="h-4 w-4 accent-[#315c4c]"
+                        />
+                      </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           {p.images[0] ? (
@@ -1641,6 +1966,20 @@ export default function AdminProducts() {
             await qc.invalidateQueries({
               queryKey: ['admin-products'],
             });
+          }}
+        />
+      )}
+
+      {bulkAiRatingsOpen && selectedProducts.length > 0 && (
+        <BulkAiRatingsModal
+          products={selectedProducts}
+          onClose={() => setBulkAiRatingsOpen(false)}
+          onCompleted={async () => {
+            for (const product of selectedProducts) {
+              await qc.invalidateQueries({
+                queryKey: ['admin-product-ai-ratings', product.id],
+              });
+            }
           }}
         />
       )}
