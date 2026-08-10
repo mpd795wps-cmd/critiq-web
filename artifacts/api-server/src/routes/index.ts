@@ -31,6 +31,7 @@ router.use(suggestionsRouter);
 router.use(fetchUrlRouter);
 router.use(authRouter);
 router.use(userRouter);
+router.use(diagnosisRouter);
 router.use(adminAuthRouter);
 router.use(adminCategoriesRouter);
 router.use(adminCriteriaRouter);
@@ -38,7 +39,6 @@ router.use(adminProductsRouter);
 router.use(adminSuggestionsRouter);
 router.use(adminUsersRouter);
 router.use(adminCategorySuggestionsRouter);
-router.use(diagnosisRouter);
 router.use(adminTentDiagnosisRouter);
 
 export default router;
