@@ -7,7 +7,7 @@ import {
   productAiRatingsTable,
   criteriaTable,
 } from "@workspace/db";
-import { eq, asc, desc, and, SQL } from "drizzle-orm";
+import { eq, asc, desc, and, inArray, SQL } from "drizzle-orm";
 import { requireAdmin } from "../../lib/adminAuth.js";
 
 const router = Router();
@@ -116,6 +116,149 @@ router.delete("/admin/products/:id", async (req, res): Promise<void> => {
   const [row] = await db.delete(productsTable).where(eq(productsTable.id, id)).returning();
   if (!row) { res.status(404).json({ error: "Not found" }); return; }
   res.sendStatus(204);
+});
+
+// PUT /admin/products/ai-ratings/bulk — 複数商品のAI評価を一括保存
+router.put("/admin/products/ai-ratings/bulk", async (req, res): Promise<void> => {
+  const { entries, publish } = req.body as {
+    entries?: Array<{
+      productId?: unknown;
+      criterionId?: unknown;
+      score?: unknown;
+      reason?: unknown;
+    }>;
+    publish?: unknown;
+  };
+
+  if (!Array.isArray(entries) || entries.length === 0) {
+    res.status(400).json({ error: "entries は1件以上必要です" });
+    return;
+  }
+
+  if (entries.length > 500) {
+    res.status(400).json({ error: "一度に保存できるAI評価は500件までです" });
+    return;
+  }
+
+  const normalized = entries.map((entry) => ({
+    productId: typeof entry.productId === "number" ? entry.productId : NaN,
+    criterionId:
+      typeof entry.criterionId === "number" ? entry.criterionId : NaN,
+    score: typeof entry.score === "number" ? entry.score : NaN,
+    reason: typeof entry.reason === "string" ? entry.reason.trim() : "",
+  }));
+
+  const invalid = normalized.find(
+    (entry) =>
+      !Number.isInteger(entry.productId) ||
+      entry.productId <= 0 ||
+      !Number.isInteger(entry.criterionId) ||
+      entry.criterionId <= 0 ||
+      !Number.isFinite(entry.score) ||
+      entry.score < 1 ||
+      entry.score > 5 ||
+      Math.round(entry.score * 2) !== entry.score * 2 ||
+      !entry.reason,
+  );
+
+  if (invalid) {
+    res.status(400).json({
+      error:
+        "productId、criterionId、1〜5の0.5刻みのscore、空でないreasonを指定してください",
+    });
+    return;
+  }
+
+  const uniqueKeys = new Set<string>();
+  for (const entry of normalized) {
+    const key = `${entry.productId}:${entry.criterionId}`;
+    if (uniqueKeys.has(key)) {
+      res.status(400).json({ error: "同じ商品・基準の評価が重複しています" });
+      return;
+    }
+    uniqueKeys.add(key);
+  }
+
+  const productIds = [...new Set(normalized.map((entry) => entry.productId))];
+  const criterionIds = [
+    ...new Set(normalized.map((entry) => entry.criterionId)),
+  ];
+
+  const [products, criteria] = await Promise.all([
+    db
+      .select({ id: productsTable.id, categoryId: productsTable.categoryId })
+      .from(productsTable)
+      .where(inArray(productsTable.id, productIds)),
+    db
+      .select({ id: criteriaTable.id, categoryId: criteriaTable.categoryId })
+      .from(criteriaTable)
+      .where(
+        and(
+          inArray(criteriaTable.id, criterionIds),
+          eq(criteriaTable.status, "active"),
+        ),
+      ),
+  ]);
+
+  const productCategoryById = new Map(
+    products.map((product) => [product.id, product.categoryId]),
+  );
+  const criterionCategoryById = new Map(
+    criteria.map((criterion) => [criterion.id, criterion.categoryId]),
+  );
+
+  const unrelated = normalized.find(
+    (entry) =>
+      !productCategoryById.has(entry.productId) ||
+      productCategoryById.get(entry.productId) !==
+        criterionCategoryById.get(entry.criterionId),
+  );
+
+  if (unrelated) {
+    res.status(400).json({
+      error: `商品ID ${unrelated.productId} と基準ID ${unrelated.criterionId} の組み合わせが不正です`,
+    });
+    return;
+  }
+
+  const shouldPublish = publish === true;
+  const now = new Date();
+
+  await db.transaction(async (tx) => {
+    for (const entry of normalized) {
+      await tx
+        .insert(productAiRatingsTable)
+        .values({
+          productId: entry.productId,
+          criterionId: entry.criterionId,
+          score: entry.score.toFixed(2),
+          reason: entry.reason,
+          status: shouldPublish ? "published" : "draft",
+          published: shouldPublish,
+          approvedAt: shouldPublish ? now : null,
+        })
+        .onConflictDoUpdate({
+          target: [
+            productAiRatingsTable.productId,
+            productAiRatingsTable.criterionId,
+          ],
+          set: {
+            score: entry.score.toFixed(2),
+            reason: entry.reason,
+            status: shouldPublish ? "published" : "draft",
+            published: shouldPublish,
+            approvedAt: shouldPublish ? now : null,
+          },
+        });
+    }
+  });
+
+  res.json({
+    ok: true,
+    saved: normalized.length,
+    products: productIds.length,
+    published: shouldPublish,
+  });
 });
 
 // GET /admin/products/:id/ratings — 基準別評価一覧

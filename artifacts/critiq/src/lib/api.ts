@@ -210,6 +210,22 @@ export const api = {
           { ratings },
         ),
 
+      saveAiRatingsBulk: (
+        entries: Array<{
+          productId: number;
+          criterionId: number;
+          score: number;
+          reason: string;
+        }>,
+        publish: boolean,
+      ) =>
+        put<{
+          ok: boolean;
+          saved: number;
+          products: number;
+          published: boolean;
+        }>("/admin/products/ai-ratings/bulk", { entries, publish }),
+
       publishAiRatings: (id: number) =>
         post<{ ok: boolean; published: number }>(
           `/admin/products/${id}/ai-ratings/publish`,
