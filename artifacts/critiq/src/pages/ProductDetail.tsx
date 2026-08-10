@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from 'wouter';
+import { Link, useParams, useSearch } from 'wouter';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@/lib/api';
 import type { ApiCriterion } from '@/types/api';
@@ -130,6 +130,8 @@ const RATINGS_LIMIT = 10;
 
 export default function ProductDetail() {
   const { productId } = useParams<{ productId: string }>();
+  const search = useSearch();
+  const fromDiagnosis = new URLSearchParams(search).get('from') === 'diagnosis';
   const id = parseInt(productId ?? '', 10);
   const queryClient = useQueryClient();
 
@@ -201,9 +203,11 @@ export default function ProductDetail() {
       <div className="mx-auto min-h-screen w-full max-w-[480px] bg-[#f8faf8] pb-12">
 
         <div className="flex items-center justify-between px-5 pt-8">
-          <button type="button" onClick={() => window.history.back()} className="text-sm font-bold text-[#315c4c]">
-            ← 戻る
-          </button>
+          {fromDiagnosis ? (
+            <Link href="/diagnosis/tents" className="text-sm font-bold text-[#315c4c]">← 診断結果に戻る</Link>
+          ) : (
+            <button type="button" onClick={() => window.history.back()} className="text-sm font-bold text-[#315c4c]">← 戻る</button>
+          )}
           <Link href="/grow" className="rounded-full border border-[#315c4c] px-3 py-1.5 text-xs font-bold text-[#315c4c] transition hover:bg-[#315c4c] hover:text-white">
             育てる →
           </Link>
