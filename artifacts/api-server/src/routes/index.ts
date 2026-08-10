@@ -16,6 +16,8 @@ import adminProductsRouter from "./admin/products.js";
 import adminSuggestionsRouter from "./admin/suggestions.js";
 import adminUsersRouter from "./admin/users.js";
 import adminCategorySuggestionsRouter from "./admin/categorySuggestions.js";
+import diagnosisRouter from "./public/diagnosis.js";
+import adminTentDiagnosisRouter from "./admin/tentDiagnosis.js";
 
 const router: IRouter = Router();
 
@@ -36,5 +38,7 @@ router.use(adminProductsRouter);
 router.use(adminSuggestionsRouter);
 router.use(adminUsersRouter);
 router.use(adminCategorySuggestionsRouter);
+router.use(diagnosisRouter);
+router.use(adminTentDiagnosisRouter);
 
 export default router;

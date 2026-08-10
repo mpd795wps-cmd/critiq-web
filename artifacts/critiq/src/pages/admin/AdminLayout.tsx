@@ -5,6 +5,7 @@ import { api } from '@/lib/api';
 const NAV_ITEMS = [
   { href: '/admin', label: 'ダッシュボード', icon: '📊' },
   { href: '/admin/products', label: '商品管理', icon: '📦' },
+  { href: '/admin/tent-diagnosis', label: 'テント診断データ', icon: '⛺' },
   { href: '/admin/criteria', label: '基準管理', icon: '📋' },
   { href: '/admin/categories', label: 'カテゴリ管理', icon: '🗂️' },
   { href: '/admin/suggestions/criteria', label: '基準提案', icon: '💡' },

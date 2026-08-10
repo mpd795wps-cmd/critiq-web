@@ -69,6 +69,26 @@ export type AdminProductItem = {
   createdAt: string;
 };
 
+export type TentDiagnosisAnswers = {
+  categoryId?: number;
+  adults: number;
+  children: number;
+  experience: 'first' | 'some' | 'experienced';
+  setupPeople: number;
+  maxBudget: number | null;
+  priorities: Array<'setup' | 'space' | 'rain' | 'summer' | 'portability' | 'durability' | 'price'>;
+  vehicle: 'bike' | 'kei' | 'compact' | 'minivan' | 'large';
+  season: 'spring-autumn' | 'summer' | 'winter' | 'all';
+};
+
+export type TentDiagnosisResult = {
+  product: ApiProduct;
+  percentage: number;
+  reasons: string[];
+  cautions: string[];
+  confidence: 'low' | 'medium' | 'high';
+};
+
 export type CriterionSuggestionItem = {
   id: number;
   categoryId: number;

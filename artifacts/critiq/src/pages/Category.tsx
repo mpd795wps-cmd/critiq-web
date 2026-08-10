@@ -32,6 +32,7 @@ export default function Category() {
   const isMousewash =
     ['mousewash', 'mouse-wash', 'mouse_wash'].includes((category?.slug ?? '').toLowerCase()) ||
     category?.name === 'マウスウォッシュ';
+  const isTent = category?.name === 'テント' || (category?.slug ?? '').toLowerCase().includes('tent');
 
   if (!loadingCats && !category) {
     return (
@@ -77,6 +78,12 @@ export default function Category() {
             あなたが商品選びで重視する基準を選択してください。
           </p>
         </header>
+
+        {isTent && (
+          <Link href="/diagnosis/tents" className="mt-7 block rounded-2xl bg-[#315c4c] px-5 py-4 text-center font-bold text-white shadow-sm">
+            30秒で自分に合うテントを診断する →
+          </Link>
+        )}
 
         <section className="mt-8">
           <div className="mb-4 flex items-end justify-between">

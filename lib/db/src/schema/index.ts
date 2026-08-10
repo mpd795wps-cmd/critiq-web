@@ -10,3 +10,4 @@ export * from "./votes.js";
 export * from "./categorySuggestions.js";
 
 export * from "./productAiRatings.js";
+export * from "./productTentDiagnosis.js";
