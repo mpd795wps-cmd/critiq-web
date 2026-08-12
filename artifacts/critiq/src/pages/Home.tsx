@@ -1,106 +1,257 @@
 import { Link } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
+import {
+  ArrowRight,
+  GlassWater,
+  Plus,
+  Search,
+  Sparkles,
+} from 'lucide-react';
+import { api } from '@/lib/api';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 export default function Home() {
+  usePageMeta(
+    'CRITIQ（クリティーク）｜あなたの基準で商品を探せる比較・口コミサービス',
+    'CRITIQ（クリティーク）は、みんなの評価や基準を参考に、自分が大切にしたい条件から商品を比較・検索できるサービスです。',
+  );
+
+  const {
+    data: categories = [],
+    isLoading,
+  } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.categories.list(),
+  });
+
   return (
     <main className="min-h-screen bg-[#edf1ed] text-[#1f2a25]">
-      <div className="mx-auto flex min-h-screen w-full max-w-[480px] flex-col bg-[#f8faf8] shadow-xl">
-        <header className="px-6 pb-6 pt-8">
+      <div className="mx-auto min-h-screen w-full max-w-[480px] bg-[#f8faf8] pb-20">
+        {/* Header */}
+        <header className="px-5 pb-5 pt-7">
           <div className="flex items-center justify-between">
-            <h1 className="text-2xl font-black tracking-[0.14em] text-[#315c4c]">CRITIQ</h1>
-            <button
-              type="button"
-              aria-label="メニューを開く"
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-[#dce5df] bg-white text-xl shadow-sm"
+            <div>
+              <p className="text-2xl font-black tracking-[0.12em] text-[#315c4c]">
+                CRITIQ
+              </p>
+              <p className="mt-0.5 text-xs font-semibold tracking-wide text-[#7a8981]">
+                クリティーク
+              </p>
+            </div>
+
+            <Link
+              href="/grow/product"
+              className="inline-flex items-center gap-1.5 rounded-full border border-[#cbd8d0] bg-white px-3 py-2 text-xs font-bold text-[#315c4c] shadow-sm transition hover:border-[#315c4c] hover:bg-[#f1f6f3]"
             >
-              ⋯
-            </button>
+              <Plus className="size-3.5" />
+              商品を追加
+            </Link>
           </div>
 
-          <div className="mt-10">
-            <p className="text-3xl font-bold leading-[1.45] tracking-tight">
-              あなたの基準や評価が、
+          <div className="mt-7">
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-[#e5efe9] px-3 py-1.5 text-xs font-bold text-[#315c4c]">
+              <Search className="size-3.5" />
+              自分に合う商品を探す
+            </div>
+
+            <h1 className="mt-4 text-[32px] font-black leading-[1.35] tracking-tight">
+              あなたの基準で、
               <br />
-              誰かの選択を変える。
-            </p>
+              商品を選ぼう。
+            </h1>
+
             <p className="mt-4 text-sm leading-7 text-[#68746e]">
-              商品を探す人も、評価を届ける人も。
+              人気順や総合点だけではなく、
               <br />
-              みんなの基準で、より納得できる選択へ。
+              あなたが大切にしたい基準から比較できます。
             </p>
           </div>
         </header>
 
-        <section className="flex-1 space-y-4 px-5 pb-28">
-          <Link
-            href="/explore"
-            className="group block rounded-[24px] border border-[#dce6df] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#e5efe9] text-2xl">
-                🔍
+        {/* Category selector */}
+        <section className="px-5">
+          <div className="flex items-end justify-between">
+            <div>
+              <p className="text-xs font-bold tracking-wide text-[#315c4c]">
+                CATEGORY
+              </p>
+              <h2 className="mt-1 text-2xl font-black">
+                何を探しますか？
+              </h2>
+            </div>
+
+            <Link
+              href="/explore"
+              className="inline-flex items-center gap-1 text-xs font-bold text-[#68746e]"
+            >
+              すべて見る
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </div>
+
+          <div className="mt-5">
+            {isLoading ? (
+              <div className="grid grid-cols-2 gap-3">
+                {Array.from({ length: 6 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="h-36 animate-pulse rounded-[24px] bg-slate-200"
+                  />
+                ))}
               </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-2xl font-bold text-[#274b3e]">探す</h2>
-                  <span className="text-2xl text-[#8ba095] transition group-hover:translate-x-1">
-                    →
-                  </span>
-                </div>
-                <p className="mt-2 font-medium">自分の基準で商品を探す</p>
-                <p className="mt-2 text-sm leading-6 text-[#728078]">
-                  商品検索やカテゴリ選択から、重視したい基準に合う商品を比較します。
+            ) : categories.length === 0 ? (
+              <div className="rounded-[24px] border border-dashed border-[#cbd8d0] bg-white px-5 py-10 text-center">
+                <p className="text-sm font-bold text-[#315c4c]">
+                  カテゴリを準備中です
+                </p>
+                <p className="mt-2 text-xs leading-5 text-[#7a8981]">
+                  商品カテゴリが追加されると、ここから探せるようになります。
                 </p>
               </div>
-            </div>
-          </Link>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {categories.map((category, index) => {
+                  const slug = (category.slug ?? '').toLowerCase();
 
+                  const isMouthwash =
+                    [
+                      'mouthwash',
+                      'mouth-wash',
+                      'mouth_wash',
+                      'mousewash',
+                      'mouse-wash',
+                      'mouse_wash',
+                    ].includes(slug) ||
+                    category.name === 'マウスウォッシュ';
+
+                  return (
+                    <Link
+                      key={category.id}
+                      href={`/explore/${category.slug}`}
+                      className="group relative flex min-h-[148px] flex-col justify-between overflow-hidden rounded-[24px] border border-[#dce5df] bg-white p-5 shadow-sm transition hover:-translate-y-1 hover:border-[#9fbdad] hover:shadow-md active:scale-[0.98]"
+                    >
+                      <div
+                        className="absolute -right-8 -top-8 h-24 w-24 rounded-full bg-[#edf4ef] transition group-hover:scale-125"
+                        aria-hidden="true"
+                      />
+
+                      <div className="relative">
+                        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#edf4ef] text-[#315c4c]">
+                          {isMouthwash ? (
+                            <GlassWater
+                              className="size-7"
+                              aria-hidden="true"
+                            />
+                          ) : (
+                            <span
+                              className="text-3xl"
+                              aria-hidden="true"
+                            >
+                              {category.icon || '○'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="relative mt-5 flex items-end justify-between gap-2">
+                        <div>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#92a097]">
+                            Category {index + 1}
+                          </p>
+                          <p className="mt-1 text-lg font-black leading-tight">
+                            {category.name}
+                          </p>
+                        </div>
+
+                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#315c4c] text-white transition group-hover:translate-x-1">
+                          <ArrowRight className="size-4" />
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          {/* Small add-product CTA */}
           <Link
-            href="/grow"
-            className="group block rounded-[24px] border border-[#dce6df] bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+            href="/grow/product"
+            className="mt-4 flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[#b9c9c0] bg-[#f2f6f3] px-4 py-3 text-sm font-bold text-[#315c4c] transition hover:border-[#315c4c] hover:bg-[#eaf2ed]"
           >
-            <div className="flex items-start gap-4">
-              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#e5efe9] text-2xl">
-                🌱
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center justify-between gap-3">
-                  <h2 className="text-2xl font-bold text-[#274b3e]">育てる</h2>
-                  <span className="text-2xl text-[#8ba095] transition group-hover:translate-x-1">
-                    →
-                  </span>
-                </div>
-                <p className="mt-2 font-medium">基準や評価をみんなに届ける</p>
-                <p className="mt-2 text-sm leading-6 text-[#728078]">
-                  持っている商品の評価や、商品の登録、基準の追加に参加します。
-                </p>
-              </div>
-            </div>
+            <Plus className="size-4" />
+            探したい商品がない場合は、商品を追加する
           </Link>
+        </section>
 
-          <div className="rounded-2xl border border-dashed border-[#cdd9d1] bg-[#f2f6f3] px-5 py-4">
-            <p className="text-sm font-bold text-[#315c4c]">CRITIQとは</p>
-            <p className="mt-1 text-sm leading-6 text-[#68746e]">
-              商品を検索する際は、自分が重視したい基準から商品を探せます。また、自分が大切にしている独自の基準をユーザー自身が追加でき、その基準がほかのユーザーの商品選びにも役立ちます。
+        {/* Concept */}
+        <section className="mt-10 px-5">
+          <div className="rounded-[28px] bg-[#274b3e] p-6 text-white shadow-sm">
+            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
+              <Sparkles className="size-5" />
+            </div>
+
+            <p className="mt-5 text-xs font-bold tracking-[0.14em] text-[#cddcd3]">
+              ABOUT CRITIQ
             </p>
+
+            <h2 className="mt-2 text-2xl font-black leading-snug">
+              正解は、
+              <br />
+              一つじゃない。
+            </h2>
+
+            <p className="mt-4 text-sm leading-7 text-[#dce8e1]">
+              CRITIQ（クリティーク）は、
+              「総合評価が高い商品」だけでなく、
+              あなたが重視する基準から商品を探せるサービスです。
+            </p>
+
+            <div className="mt-5 space-y-2.5">
+              {[
+                '設営しやすさを重視したい',
+                '耐久性を重視したい',
+                '価格やコスパを重視したい',
+              ].map((text) => (
+                <div
+                  key={text}
+                  className="flex items-center gap-3 rounded-2xl bg-white/8 px-4 py-3"
+                >
+                  <span
+                    className="h-2 w-2 shrink-0 rounded-full bg-[#b8d3c3]"
+                    aria-hidden="true"
+                  />
+                  <span className="text-sm font-semibold">
+                    {text}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-5 text-sm leading-7 text-[#dce8e1]">
+              みんなの評価や基準が、
+              次に商品を選ぶ人の参考になります。
+            </p>
+
+            <Link
+              href="/grow/rating"
+              className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-white"
+            >
+              使った商品を評価する
+              <ArrowRight className="size-4" />
+            </Link>
           </div>
         </section>
 
-        <nav className="fixed bottom-0 left-1/2 z-20 flex w-full max-w-[480px] -translate-x-1/2 border-t border-[#dfe6e1] bg-white/95 px-8 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
-          <Link
-            href="/explore"
-            className="flex flex-1 flex-col items-center gap-1 rounded-xl py-1 text-[#315c4c]"
-          >
-            <span className="text-xl">🔍</span>
-            <span className="text-xs font-bold">探す</span>
-          </Link>
-          <Link
-            href="/grow"
-            className="flex flex-1 flex-col items-center gap-1 rounded-xl py-1 text-[#718078]"
-          >
-            <span className="text-xl">🌱</span>
-            <span className="text-xs font-bold">育てる</span>
-          </Link>
-        </nav>
+        {/* Footer */}
+        <footer className="mt-10 px-5 text-center">
+          <p className="text-xs leading-6 text-[#98a39d]">
+            CRITIQ（クリティーク）
+            <br />
+            あなたが大切にする基準が、
+            誰かの商品選びを助けます。
+          </p>
+        </footer>
       </div>
     </main>
   );
