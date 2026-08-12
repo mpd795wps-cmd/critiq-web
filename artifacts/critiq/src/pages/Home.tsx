@@ -210,10 +210,16 @@ export default function Home() {
 
             <Link
               href="/grow/rating"
-              className="mt-6 flex w-full items-center justify-between rounded-2xl bg-white px-5 py-4 text-sm font-black text-[#274b3e] shadow-sm transition hover:bg-[#f1f6f3] active:scale-[0.98]"
+              className="mt-6 flex w-full items-center justify-between rounded-2xl bg-white px-5 py-4 text-sm font-black shadow-md transition hover:-translate-y-0.5 hover:bg-[#f5f8f6] hover:shadow-lg active:scale-[0.98]"
+              style={{ color: '#274b3e' }}
             >
-              <span>使った商品を評価する</span>
-              <ArrowRight className="size-4" />
+              <span className="font-black">
+                使った商品を評価する
+              </span>
+              <ArrowRight
+                className="size-4"
+                strokeWidth={2.5}
+              />
             </Link>
           </div>
         </section>

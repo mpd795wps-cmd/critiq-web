@@ -80,8 +80,24 @@ export default function Category() {
         </header>
 
         {isTent && (
-          <Link href="/diagnosis/tents" className="mt-7 block rounded-2xl bg-[#315c4c] px-5 py-4 text-center font-bold text-white shadow-sm">
-            15秒で自分に合うテントを診断する →
+          <Link
+            href="/diagnosis/tents"
+            className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-center text-base font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.99]"
+            style={{
+              backgroundColor: '#ff8a00',
+              color: '#ffffff',
+            }}
+          >
+            <span
+              className="text-xl"
+              aria-hidden="true"
+            >
+              ⏱
+            </span>
+            <span>
+              15秒で自分に合うテントを診断する
+            </span>
+            <span aria-hidden="true">→</span>
           </Link>
         )}
 
