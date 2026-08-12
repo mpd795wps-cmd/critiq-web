@@ -35,6 +35,8 @@ export default function TentDiagnosis() {
   const [results, setResults] = useState<TentDiagnosisResult[] | null>(restored?.results ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showAllResults, setShowAllResults] = useState(false);
+  const [matchInfoProductId, setMatchInfoProductId] = useState<number | null>(null);
   const { data: categories = [] } = useQuery({ queryKey: ['categories'], queryFn: () => api.categories.list() });
   const tentCategory = useMemo(() => categories.find((item) => item.name === 'テント' || item.slug.includes('tent')), [categories]);
 
@@ -54,7 +56,12 @@ export default function TentDiagnosis() {
     try {
       const data = await api.diagnosis.tents({ ...answers, categoryId: tentCategory?.id });
       setResults(data.results);
-      sessionStorage.setItem(DIAGNOSIS_SESSION_KEY, JSON.stringify({ answers, results: data.results }));
+      setShowAllResults(false);
+      setMatchInfoProductId(null);
+      sessionStorage.setItem(
+        DIAGNOSIS_SESSION_KEY,
+        JSON.stringify({ answers, results: data.results }),
+      );
       window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : '診断に失敗しました');
@@ -68,7 +75,7 @@ export default function TentDiagnosis() {
           <button onClick={() => setResults(null)} className="text-sm font-bold text-[#315c4c]">← 条件を変更する</button>
           <p className="mt-7 text-sm font-bold text-[#315c4c]">CRITIQ テント診断</p>
           <h1 className="mt-2 text-3xl font-bold">あなたに合うテント{results.length}選</h1>
-          <p className="mt-3 text-sm leading-6 text-[#68746e]">条件との相性が高い順に、最大5商品を表示しています。</p>
+          <p className="mt-3 text-sm leading-6 text-[#68746e]">条件との相性が高い順に、おすすめの商品を表示しています。</p>
           <section className="mt-6 rounded-2xl border border-[#dce5df] bg-white p-5">
             <h2 className="text-sm font-bold">今回の検索条件</h2>
             <div className="mt-3 flex flex-wrap gap-2 text-xs font-semibold text-[#46534d]">
@@ -86,13 +93,82 @@ export default function TentDiagnosis() {
             </div>
           </section>
           <div className="mt-7 space-y-5">
-            {results.map((item, index) => (
-              <article key={item.product.id} className="overflow-hidden rounded-3xl bg-white shadow-sm">
+            {(showAllResults ? results : results.slice(0, 5)).map((item, index) => (
+              <article
+                key={item.product.id}
+                className="overflow-visible rounded-3xl bg-white shadow-sm"
+              >
                 {item.product.images[0] && <img src={item.product.images[0]} alt="" className="h-52 w-full object-contain bg-white" />}
                 <div className="p-5">
                   <div className="flex items-start justify-between gap-3">
                     <div><span className="text-sm font-black text-[#315c4c]">{index + 1}位</span><h2 className="mt-1 text-lg font-bold">{item.product.name}</h2><p className="text-sm text-[#68746e]">{item.product.brand}</p></div>
-                    <span className="shrink-0 rounded-full bg-[#315c4c] px-3 py-2 text-sm font-black text-white">相性 {item.percentage}%</span>
+                    <div className="relative shrink-0">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setMatchInfoProductId((current) =>
+                            current === item.product.id
+                              ? null
+                              : item.product.id,
+                          )
+                        }
+                        className="flex items-center gap-1.5 rounded-full bg-[#315c4c] px-3 py-2 text-sm font-black text-white"
+                        aria-expanded={matchInfoProductId === item.product.id}
+                      >
+                        相性 {item.percentage}%
+                        <span
+                          className="flex h-4 w-4 items-center justify-center rounded-full border border-white/70 text-[10px]"
+                          aria-hidden="true"
+                        >
+                          i
+                        </span>
+                      </button>
+
+                      {matchInfoProductId === item.product.id && (
+                        <div className="absolute right-0 top-full z-30 mt-2 w-72 rounded-2xl border border-[#dce5df] bg-white p-4 text-left shadow-xl">
+                          <p className="text-sm font-black text-[#1f2a25]">
+                            相性の計算方法
+                          </p>
+
+                          <p className="mt-2 text-xs leading-5 text-[#68746e]">
+                            診断で選んだ条件ごとに点数を付け、
+                            条件の重要度に応じて重み付けした平均値です。
+                          </p>
+
+                          <div className="mt-3 space-y-2 rounded-xl bg-[#f5f8f6] p-3 text-xs leading-5 text-[#46534d]">
+                            <p>
+                              <strong>人数・広さ</strong>
+                              ：条件に合うほど高得点
+                            </p>
+                            <p>
+                              <strong>設営・初心者向け</strong>
+                              ：選択条件に応じて加点
+                            </p>
+                            <p>
+                              <strong>予算</strong>
+                              ：予算内なら高得点
+                            </p>
+                            <p>
+                              <strong>重視項目</strong>
+                              ：選んだ項目は比重を高く計算
+                            </p>
+                            <p>
+                              <strong>季節・移動手段</strong>
+                              ：使用環境との適合度を反映
+                            </p>
+                          </div>
+
+                          <p className="mt-3 text-[11px] leading-5 text-slate-400">
+                            各条件を0〜100点に換算し、
+                            重要度を掛けた加重平均を相性として表示しています。
+                          </p>
+
+                          <p className="mt-3 border-t border-slate-100 pt-3 text-sm font-black text-[#315c4c]">
+                            この商品の相性：{item.percentage}%
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <h3 className="mt-5 text-sm font-bold">合っている理由</h3>
                   <ul className="mt-2 space-y-1 text-sm leading-6 text-[#46534d]">{item.reasons.map((reason) => <li key={reason}>✓ {reason}</li>)}</ul>
@@ -103,12 +179,47 @@ export default function TentDiagnosis() {
                         🛒 Amazonで商品を見る
                       </a>
                     )}
-                    <Link href={`/product/${item.product.id}?from=diagnosis`} className="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-800 transition hover:bg-slate-50">商品詳細を見る</Link>
+                    <Link href={`/product/${item.product.id}?from=diagnosis`} className="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-800 transition hover:bg-slate-50">詳しく商品評価を見る</Link>
                   </div>
                 </div>
               </article>
             ))}
-            {results.length === 0 && <div className="rounded-3xl bg-white p-7 text-center"><p className="font-bold">条件に十分合う商品がありませんでした</p><p className="mt-2 text-sm text-[#68746e]">予算や人数条件を少し広げてお試しください。</p></div>}
+            {!showAllResults && results.length > 5 && (
+              <button
+                type="button"
+                onClick={() => setShowAllResults(true)}
+                className="w-full rounded-2xl border-2 border-[#315c4c] bg-white px-5 py-4 text-sm font-black text-[#315c4c] shadow-sm transition hover:bg-[#f1f6f3] active:scale-[0.99]"
+              >
+                その他の商品も見る
+                <span className="ml-2 text-xs font-semibold text-[#68746e]">
+                  残り{results.length - 5}商品
+                </span>
+              </button>
+            )}
+
+            {showAllResults && results.length > 5 && (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowAllResults(false);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="w-full py-2 text-sm font-bold text-[#68746e]"
+              >
+                ▲ 上位5商品だけ表示
+              </button>
+            )}
+
+            {results.length === 0 && (
+              <div className="rounded-3xl bg-white p-7 text-center">
+                <p className="font-bold">
+                  条件に十分合う商品がありませんでした
+                </p>
+                <p className="mt-2 text-sm text-[#68746e]">
+                  予算や人数条件を少し広げてお試しください。
+                </p>
+              </div>
+            )}
           </div>
         </div>
       </main>

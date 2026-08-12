@@ -118,8 +118,14 @@ router.post("/diagnosis/tents", async (req, res): Promise<void> => {
     };
   }));
 
-  const eligible = scored.filter((item) => item.percentage >= 45).sort((a, b) => b.percentage - a.percentage);
-  res.json({ results: eligible.slice(0, 5), totalEligible: eligible.length });
+  const eligible = scored
+    .filter((item) => item.percentage >= 45)
+    .sort((a, b) => b.percentage - a.percentage);
+
+  res.json({
+    results: eligible,
+    totalEligible: eligible.length,
+  });
 });
 
 export default router;

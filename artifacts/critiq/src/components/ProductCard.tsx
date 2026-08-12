@@ -369,7 +369,7 @@ export default function ProductCard({
             href={`/product/${product.id}`}
             className="block w-full rounded-2xl border border-slate-300 px-4 py-3 text-center text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
           >
-            商品詳細を見る
+            詳しく商品評価を見る
           </Link>
         </div>
       </div>

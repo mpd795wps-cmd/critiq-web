@@ -157,12 +157,6 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://critiq-web-critiq.vercel.app/product/64</loc>
-    <lastmod>2026-08-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
     <loc>https://critiq-web-critiq.vercel.app/product/65</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
@@ -182,6 +176,12 @@
   </url>
   <url>
     <loc>https://critiq-web-critiq.vercel.app/product/43</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/64</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -217,6 +217,12 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/62</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://critiq-web-critiq.vercel.app/product/33</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
@@ -229,25 +235,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://critiq-web-critiq.vercel.app/product/59</loc>
-    <lastmod>2026-08-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://critiq-web-critiq.vercel.app/product/60</loc>
-    <lastmod>2026-08-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://critiq-web-critiq.vercel.app/product/62</loc>
-    <lastmod>2026-08-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://critiq-web-critiq.vercel.app/product/22</loc>
+    <loc>https://critiq-web-critiq.vercel.app/product/23</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -265,13 +253,7 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://critiq-web-critiq.vercel.app/product/20</loc>
-    <lastmod>2026-08-12</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://critiq-web-critiq.vercel.app/product/14</loc>
+    <loc>https://critiq-web-critiq.vercel.app/product/24</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -283,13 +265,13 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://critiq-web-critiq.vercel.app/product/23</loc>
+    <loc>https://critiq-web-critiq.vercel.app/product/20</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://critiq-web-critiq.vercel.app/product/24</loc>
+    <loc>https://critiq-web-critiq.vercel.app/product/22</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -302,6 +284,12 @@
   </url>
   <url>
     <loc>https://critiq-web-critiq.vercel.app/product/56</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/14</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -332,6 +320,186 @@
   </url>
   <url>
     <loc>https://critiq-web-critiq.vercel.app/product/68</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/70</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/71</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/72</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/73</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/74</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/75</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/76</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/77</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/78</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/79</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/80</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/81</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/82</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/83</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/84</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/85</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/86</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/87</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/88</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/89</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/90</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/91</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/92</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/93</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/94</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/95</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/96</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/97</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/98</loc>
+    <lastmod>2026-08-12</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://critiq-web-critiq.vercel.app/product/99</loc>
     <lastmod>2026-08-12</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>

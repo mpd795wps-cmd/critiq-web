@@ -64,6 +64,7 @@ function HelpfulChip({ criterion, onHelped }: { criterion: ApiCriterion; onHelpe
 
 export default function Results() {
   const { categorySlug } = useParams<{ categorySlug: string }>();
+  const [productSearch, setProductSearch] = useState('');
   const search = useSearch();
   const queryClient = useQueryClient();
 
@@ -119,6 +120,24 @@ export default function Results() {
         b.match.overallAverageScore - a.match.overallAverageScore,
     );
 
+  const normalizedProductSearch = productSearch
+    .trim()
+    .toLowerCase();
+
+  const filteredProducts = normalizedProductSearch
+    ? matchedProducts.filter(({ product }) => {
+        const searchableText = [
+          product.name,
+          product.brand,
+          product.modelNumber ?? '',
+        ]
+          .join(' ')
+          .toLowerCase();
+
+        return searchableText.includes(normalizedProductSearch);
+      })
+    : matchedProducts;
+
   function handleHelped(criterionId: number, newCount: number) {
     queryClient.setQueryData<ApiCriterion[]>(['criteria', category?.id], (prev) =>
       prev?.map((c) => c.id === criterionId ? { ...c, helpfulCount: newCount } : c) ?? []
@@ -165,9 +184,42 @@ export default function Results() {
         </section>
 
         <section className="mt-8 space-y-4">
+          <div>
+            <label
+              htmlFor="product-search"
+              className="text-sm font-bold text-slate-900"
+            >
+              商品名などで絞り込む
+            </label>
+
+            <div className="relative mt-2">
+              <span
+                className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
+                aria-hidden="true"
+              >
+                🔍
+              </span>
+
+              <input
+                id="product-search"
+                type="search"
+                value={productSearch}
+                onChange={(event) =>
+                  setProductSearch(event.target.value)
+                }
+                placeholder="商品名・メーカー・型番を入力"
+                className="w-full rounded-2xl border border-slate-200 bg-white py-3.5 pl-11 pr-4 text-sm outline-none transition placeholder:text-slate-400 focus:border-[#315c4c] focus:ring-2 focus:ring-[#315c4c]/10"
+              />
+            </div>
+          </div>
+
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-slate-900">商品一覧</h2>
-            <p className="text-sm text-slate-500">{isLoading ? '…' : `${matchedProducts.length}件`}</p>
+            <h2 className="text-base font-bold text-slate-900">
+              商品一覧
+            </h2>
+            <p className="text-sm text-slate-500">
+              {isLoading ? '…' : `${filteredProducts.length}件`}
+            </p>
           </div>
 
           {isLoading ? (
@@ -176,14 +228,16 @@ export default function Results() {
                 <div key={i} className="h-64 animate-pulse rounded-3xl bg-slate-200" />
               ))}
             </div>
-          ) : matchedProducts.length > 0 ? (
-            matchedProducts.map(({ product, match }) => (
+          ) : filteredProducts.length > 0 ? (
+            filteredProducts.map(({ product, match }) => (
               <ProductCard key={product.id} product={product} match={match} />
             ))
           ) : (
             <div className="rounded-3xl border border-slate-200 bg-white p-6 text-center">
               <p className="text-sm text-slate-600">
-                該当する商品がまだ登録されていません。
+                {productSearch.trim()
+                  ? '検索条件に一致する商品がありません。'
+                  : '該当する商品がまだ登録されていません。'}
               </p>
             </div>
           )}
