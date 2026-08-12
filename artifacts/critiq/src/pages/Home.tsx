@@ -27,7 +27,6 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-[#edf1ed] text-[#1f2a25]">
       <div className="mx-auto min-h-screen w-full max-w-[480px] bg-[#f8faf8] pb-20">
-        {/* Header */}
         <header className="px-5 pb-5 pt-7">
           <div className="flex items-center justify-between">
             <div>
@@ -68,7 +67,6 @@ export default function Home() {
           </div>
         </header>
 
-        {/* Category selector */}
         <section className="px-5">
           <div className="flex items-end justify-between">
             <div>
@@ -174,7 +172,6 @@ export default function Home() {
             )}
           </div>
 
-          {/* Small add-product CTA */}
           <Link
             href="/grow/product"
             className="mt-4 flex items-center justify-center gap-2 rounded-2xl border border-dashed border-[#b9c9c0] bg-[#f2f6f3] px-4 py-3 text-sm font-bold text-[#315c4c] transition hover:border-[#315c4c] hover:bg-[#eaf2ed]"
@@ -184,7 +181,6 @@ export default function Home() {
           </Link>
         </section>
 
-        {/* Concept */}
         <section className="mt-10 px-5">
           <div className="rounded-[28px] bg-[#274b3e] p-6 text-white shadow-sm">
             <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10">
@@ -207,27 +203,6 @@ export default function Home() {
               あなたが重視する基準から商品を探せるサービスです。
             </p>
 
-            <div className="mt-5 space-y-2.5">
-              {[
-                '設営しやすさを重視したい',
-                '耐久性を重視したい',
-                '価格やコスパを重視したい',
-              ].map((text) => (
-                <div
-                  key={text}
-                  className="flex items-center gap-3 rounded-2xl bg-white/8 px-4 py-3"
-                >
-                  <span
-                    className="h-2 w-2 shrink-0 rounded-full bg-[#b8d3c3]"
-                    aria-hidden="true"
-                  />
-                  <span className="text-sm font-semibold">
-                    {text}
-                  </span>
-                </div>
-              ))}
-            </div>
-
             <p className="mt-5 text-sm leading-7 text-[#dce8e1]">
               みんなの評価や基準が、
               次に商品を選ぶ人の参考になります。
@@ -235,15 +210,14 @@ export default function Home() {
 
             <Link
               href="/grow/rating"
-              className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-white"
+              className="mt-6 flex w-full items-center justify-between rounded-2xl bg-white px-5 py-4 text-sm font-black text-[#274b3e] shadow-sm transition hover:bg-[#f1f6f3] active:scale-[0.98]"
             >
-              使った商品を評価する
+              <span>使った商品を評価する</span>
               <ArrowRight className="size-4" />
             </Link>
           </div>
         </section>
 
-        {/* Footer */}
         <footer className="mt-10 px-5 text-center">
           <p className="text-xs leading-6 text-[#98a39d]">
             CRITIQ（クリティーク）
