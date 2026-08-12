@@ -81,7 +81,7 @@ export default function Category() {
 
         {isTent && (
           <Link href="/diagnosis/tents" className="mt-7 block rounded-2xl bg-[#315c4c] px-5 py-4 text-center font-bold text-white shadow-sm">
-            30秒で自分に合うテントを診断する →
+            15秒で自分に合うテントを診断する →
           </Link>
         )}
 
