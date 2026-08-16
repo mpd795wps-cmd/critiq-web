@@ -311,6 +311,17 @@ export default function TentGuide() {
                       >
                         詳しく商品評価を見る →
                       </Link>
+
+                      {product.amazonAffiliateUrl && (
+                        <a
+                          href={product.amazonAffiliateUrl}
+                          target="_blank"
+                          rel="noopener noreferrer sponsored"
+                          className="mt-3 flex w-full items-center justify-center rounded-2xl bg-[#ff9900] px-4 py-3 text-sm font-black text-white"
+                        >
+                          Amazonで商品を見る →
+                        </a>
+                      )}
                     </div>
                   </article>
                 );
