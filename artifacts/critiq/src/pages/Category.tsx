@@ -15,10 +15,18 @@ export default function Category() {
 
   const category = categories.find((c) => c.slug === categorySlug);
 
+  const isTent = category?.name === 'テント' || (category?.slug ?? '').toLowerCase().includes('tent');
+
   usePageMeta(
-    category ? `${category.name}の比較・選び方｜CRITIQ` : undefined,
     category
-      ? `CRITIQで${category.name}を比較・検索。重さ・設営しやすさ・防水性など、あなたが大切にする基準から最適な${category.name}を見つけましょう。`
+      ? isTent
+        ? 'テントおすすめ・比較｜キャンプ用テントを条件から探す｜CRITIQ'
+        : `${category.name}の比較・選び方｜CRITIQ`
+      : undefined,
+    category
+      ? isTent
+        ? 'おすすめのキャンプ用テントを比較。設営しやすさ・耐水性・耐久性・居住性など、重視する条件から自分に合うテントを探せます。ソロキャンプやファミリーキャンプのテント選びにも。'
+        : `CRITIQで${category.name}を比較・検索。重さ・設営しやすさ・防水性など、あなたが大切にする基準から最適な${category.name}を見つけましょう。`
       : undefined,
   );
 
@@ -32,7 +40,7 @@ export default function Category() {
   const isMousewash =
     ['mousewash', 'mouse-wash', 'mouse_wash'].includes((category?.slug ?? '').toLowerCase()) ||
     category?.name === 'マウスウォッシュ';
-  const isTent = category?.name === 'テント' || (category?.slug ?? '').toLowerCase().includes('tent');
+
 
   if (!loadingCats && !category) {
     return (
@@ -71,11 +79,15 @@ export default function Category() {
             )}
             <div>
               <p className="text-sm font-bold text-[#315c4c]">アウトドア用品</p>
-              <h1 className="mt-1 text-3xl font-bold">{category?.name ?? '　'}</h1>
+              <h1 className="mt-1 text-3xl font-bold">
+                {isTent ? 'おすすめのテントを比較・検索' : (category?.name ?? '　')}
+              </h1>
             </div>
           </div>
           <p className="mt-5 leading-7 text-[#68746e]">
-            あなたが商品選びで重視する基準を選択してください。
+            {isTent
+              ? 'キャンプ用テントを、設営しやすさ・耐水性・耐久性・居住性などの基準から比較できます。ソロキャンプやファミリーキャンプなど、あなたの使い方に合うおすすめのテントを探してみましょう。'
+              : 'あなたが商品選びで重視する基準を選択してください。'}
           </p>
         </header>
 
