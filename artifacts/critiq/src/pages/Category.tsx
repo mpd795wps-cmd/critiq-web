@@ -92,25 +92,46 @@ export default function Category() {
         </header>
 
         {isTent && (
-          <Link
-            href="/diagnosis/tents"
-            className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-center text-base font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.99]"
-            style={{
-              backgroundColor: '#ff8a00',
-              color: '#ffffff',
-            }}
-          >
-            <span
-              className="text-xl"
-              aria-hidden="true"
+          <>
+            <Link
+              href="/diagnosis/tents"
+              className="mt-7 flex w-full items-center justify-center gap-2 rounded-2xl px-5 py-4 text-center text-base font-black text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl active:scale-[0.99]"
+              style={{
+                backgroundColor: '#ff8a00',
+                color: '#ffffff',
+              }}
             >
-              ⏱
-            </span>
-            <span>
-              15秒で自分に合うテントを診断する
-            </span>
-            <span aria-hidden="true">→</span>
-          </Link>
+              <span className="text-xl" aria-hidden="true">
+                ⏱
+              </span>
+              <span>15秒で自分に合うテントを診断する</span>
+              <span aria-hidden="true">→</span>
+            </Link>
+
+            <section className="mt-8">
+              <h2 className="text-lg font-bold">目的別におすすめのテントを探す</h2>
+              <div className="mt-4 grid gap-3">
+                <Link
+                  href="/tents/solo"
+                  className="rounded-2xl border border-[#dce5df] bg-white p-4 font-bold"
+                >
+                  ソロテントおすすめ・比較 →
+                </Link>
+                <Link
+                  href="/tents/family"
+                  className="rounded-2xl border border-[#dce5df] bg-white p-4 font-bold"
+                >
+                  ファミリーテントおすすめ・比較 →
+                </Link>
+                <Link
+                  href="/tents/beginner"
+                  className="rounded-2xl border border-[#dce5df] bg-white p-4 font-bold"
+                >
+                  初心者向けテントおすすめ・比較 →
+                </Link>
+              </div>
+            </section>
+          </>
         )}
 
         <section className="mt-8">

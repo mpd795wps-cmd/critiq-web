@@ -24,6 +24,7 @@ import AdminProductSuggestions from '@/pages/admin/AdminProductSuggestions';
 import AdminCategorySuggestions from '@/pages/admin/AdminCategorySuggestions';
 import AdminUsers from '@/pages/admin/AdminUsers';
 import TentDiagnosis from '@/pages/TentDiagnosis';
+import TentGuide from '@/pages/TentGuide';
 import AdminTentDiagnosis from '@/pages/admin/AdminTentDiagnosis';
 
 const ADMIN_LAST_PATH_KEY = 'critiq_admin_last_path';
@@ -53,6 +54,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/explore" component={Explore} />
       <Route path="/diagnosis/tents" component={TentDiagnosis} />
+      <Route path="/tents/:guideType" component={TentGuide} />
       <Route path="/explore/:categorySlug/results" component={Results} />
       <Route path="/explore/:categorySlug" component={Category} />
       <Route path="/grow" component={Grow} />

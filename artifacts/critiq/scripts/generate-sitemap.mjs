@@ -43,6 +43,9 @@ function escapeXml(value) {
 // 検索結果に載せたい固定ページ
 addUrl("/", { changefreq: "weekly", priority: "1.0" });
 addUrl("/explore", { changefreq: "daily", priority: "0.9" });
+addUrl("/tents/solo", { changefreq: "weekly", priority: "0.9" });
+addUrl("/tents/family", { changefreq: "weekly", priority: "0.9" });
+addUrl("/tents/beginner", { changefreq: "weekly", priority: "0.9" });
 addUrl("/grow", { changefreq: "weekly", priority: "0.7" });
 addUrl("/grow/rating", { changefreq: "daily", priority: "0.7" });
 addUrl("/grow/product", { changefreq: "monthly", priority: "0.5" });
