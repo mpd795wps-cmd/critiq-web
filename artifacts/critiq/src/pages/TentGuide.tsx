@@ -1,5 +1,8 @@
 import { Link, useParams } from 'wouter';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '@/lib/api';
 import { usePageMeta } from '@/hooks/usePageMeta';
+import type { TentDiagnosisAnswers } from '@/types/api';
 
 type GuideType = 'solo' | 'family' | 'beginner';
 
@@ -89,11 +92,81 @@ const guides: Record<
   },
 };
 
+
+const diagnosisPresets: Record<GuideType, Omit<TentDiagnosisAnswers, 'categoryId'>> = {
+  solo: {
+    adults: 1,
+    children: 0,
+    experience: 'some',
+    setupPeople: 1,
+    maxBudget: 80000,
+    priorities: ['setup', 'portability'],
+    vehicle: 'compact',
+    season: 'spring-autumn',
+  },
+
+  family: {
+    adults: 2,
+    children: 2,
+    experience: 'some',
+    setupPeople: 2,
+    maxBudget: 150000,
+    priorities: ['space', 'durability'],
+    vehicle: 'minivan',
+    season: 'spring-autumn',
+  },
+
+  beginner: {
+    adults: 2,
+    children: 0,
+    experience: 'first',
+    setupPeople: 2,
+    maxBudget: 80000,
+    priorities: ['setup', 'price'],
+    vehicle: 'compact',
+    season: 'spring-autumn',
+  },
+};
+
+function formatPrice(price: number | null | undefined) {
+  if (!price) return null;
+  return `${price.toLocaleString('ja-JP')}円`;
+}
+
 export default function TentGuide() {
   const { guideType } = useParams<{ guideType: string }>();
-  const guide = guides[guideType as GuideType];
+  const guideKey = guideType as GuideType;
+  const guide = guides[guideKey];
 
   usePageMeta(guide?.metaTitle, guide?.description);
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ['categories'],
+    queryFn: () => api.categories.list(),
+  });
+
+  const tentCategory = categories.find(
+    (item) =>
+      item.name === 'テント' ||
+      item.slug.toLowerCase().includes('tent'),
+  );
+
+  const {
+    data: diagnosisData,
+    isLoading: productsLoading,
+    isError: productsError,
+  } = useQuery({
+    queryKey: ['tent-guide-recommendations', guideKey, tentCategory?.id],
+    queryFn: () =>
+      api.diagnosis.tents({
+        ...diagnosisPresets[guideKey],
+        categoryId: tentCategory!.id,
+      }),
+    enabled: !!guide && !!tentCategory,
+    staleTime: 1000 * 60 * 30,
+  });
+
+  const recommendedProducts = diagnosisData?.results.slice(0, 5) ?? [];
 
   if (!guide) {
     return (
@@ -136,6 +209,117 @@ export default function TentGuide() {
                 </p>
               </article>
             ))}
+          </div>
+        </section>
+
+        <section className="mt-10">
+          <div className="flex items-end justify-between gap-4">
+            <div>
+              <p className="text-sm font-bold text-[#315c4c]">
+                CRITIQ診断データから選定
+              </p>
+              <h2 className="mt-1 text-xl font-black">
+                {guide.label}におすすめのテント5選
+              </h2>
+            </div>
+          </div>
+
+          <p className="mt-3 text-sm leading-7 text-[#68746e]">
+            CRITIQに登録されているテントを、用途・人数・設営条件などから分析し、相性が高い順に表示しています。
+          </p>
+
+          <div className="mt-5 space-y-4">
+            {productsLoading ? (
+              Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={index}
+                  className="h-44 animate-pulse rounded-3xl bg-slate-200"
+                />
+              ))
+            ) : productsError ? (
+              <div className="rounded-3xl border border-[#dce5df] bg-white p-6 text-sm text-[#68746e]">
+                おすすめ商品を取得できませんでした。テント診断から条件を指定して探すことができます。
+              </div>
+            ) : recommendedProducts.length > 0 ? (
+              recommendedProducts.map((item, index) => {
+                const product = item.product;
+                const image = product.images?.[0];
+
+                return (
+                  <article
+                    key={product.id}
+                    className="overflow-hidden rounded-3xl border border-[#dce5df] bg-white"
+                  >
+                    {image && (
+                      <img
+                        src={image}
+                        alt={`${product.brand} ${product.name}`}
+                        className="h-48 w-full object-cover"
+                        loading="lazy"
+                      />
+                    )}
+
+                    <div className="p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-xs font-bold text-[#315c4c]">
+                            おすすめ {index + 1}
+                          </p>
+                          <h3 className="mt-1 text-lg font-black">
+                            {product.name}
+                          </h3>
+                          <p className="mt-1 text-sm text-[#68746e]">
+                            {product.brand}
+                            {product.modelNumber
+                              ? `・${product.modelNumber}`
+                              : ''}
+                          </p>
+                        </div>
+
+                        <div className="shrink-0 rounded-2xl bg-[#e8f0eb] px-3 py-2 text-center">
+                          <p className="text-[10px] font-bold text-[#68746e]">
+                            相性
+                          </p>
+                          <p className="text-lg font-black text-[#315c4c]">
+                            {item.percentage}%
+                          </p>
+                        </div>
+                      </div>
+
+                      {formatPrice(product.price) && (
+                        <p className="mt-3 font-bold">
+                          参考価格 {formatPrice(product.price)}
+                        </p>
+                      )}
+
+                      {item.reasons.length > 0 && (
+                        <div className="mt-4">
+                          <p className="text-xs font-bold text-[#315c4c]">
+                            おすすめ理由
+                          </p>
+                          <ul className="mt-2 space-y-1 text-sm leading-6 text-[#68746e]">
+                            {item.reasons.slice(0, 2).map((reason) => (
+                              <li key={reason}>・{reason}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <Link
+                        href={`/product/${product.id}`}
+                        className="mt-5 flex w-full items-center justify-center rounded-2xl border border-[#315c4c] px-4 py-3 text-sm font-bold text-[#315c4c]"
+                      >
+                        詳しく商品評価を見る →
+                      </Link>
+                    </div>
+                  </article>
+                );
+              })
+            ) : (
+              <div className="rounded-3xl border border-[#dce5df] bg-white p-6 text-sm text-[#68746e]">
+                条件に合う商品を準備中です。
+              </div>
+            )}
           </div>
         </section>
 
